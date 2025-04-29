@@ -43,7 +43,7 @@ app.get("/restaurants", async (c) => {
   }
 });
 
-app.get("/restaurants/:id/menu-items", async (c) => {
+app.get("/restaurants/:id", async (c) => {
   try {
     const id = Number(c.req.param("id"));
 
