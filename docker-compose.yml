@@ -1,0 +1,38 @@
+name: dwichs-postgres
+services:
+  dwichs-postgres:
+    image: postgres
+    container_name: dwichs-postgres
+    restart: unless-stopped
+    shm_size: 128mb
+    environment:
+      POSTGRES_PASSWORD: admin
+      POSTGRES_USER: admin
+      POSTGRES_DB: dwichs
+      POSTGRES_HOST_AUTH_METHOD: scram-sha-256
+    ports:
+      - 5432:5432
+    volumes:
+      - dwichs-postgres:/var/lib/postgresql/data
+
+  dwichs-adminer:
+    image: adminer
+    container_name: dwichs-adminer
+    restart: unless-stopped
+    ports:
+      - 8080:8080
+
+  dwichs-pgadmin:
+    image: dpage/pgadmin4
+    container_name: dwichs-pgadmin
+    ports:
+      - 80:80
+    environment:
+      - PGADMIN_DEFAULT_EMAIL=karichikarichikarichi@gmail.com
+      - PGADMIN_DEFAULT_PASSWORD=admin
+    volumes:
+      - ~/docker/container/pgadmin:/var/lib/pgadmin
+
+volumes:
+  dwichs-postgres:
+    name: "dwichs-postgres"

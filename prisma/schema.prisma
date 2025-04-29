@@ -1,0 +1,204 @@
+generator client {
+  provider = "prisma-client-js"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Address {
+  id           Int        @id @default(autoincrement())
+  street       String
+  city         String
+  state        String
+  postalCode   String
+  country      String
+  latitude     Float?
+  longitude    Float?
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @default(now()) @updatedAt
+  restaurantId Int
+  Restaurant   Restaurant @relation(fields: [restaurantId], references: [id])
+}
+
+model Cart {
+  id        Int        @id @default(autoincrement())
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @default(now()) @updatedAt
+  userId    Int?
+  groupId   Int?
+  Group     Group?     @relation(fields: [groupId], references: [id])
+  User      User?      @relation(fields: [userId], references: [id])
+  CartItem  CartItem[]
+}
+
+model CartItem {
+  id             Int      @id @default(autoincrement())
+  quantity       Int
+  specialRequest String?
+  cartId         Int
+  menuItemId     Int
+  userId         Int?
+  Cart           Cart     @relation(fields: [cartId], references: [id])
+  MenuItem       MenuItem @relation(fields: [menuItemId], references: [id])
+  User           User?    @relation(fields: [userId], references: [id])
+}
+
+model Group {
+  id              Int               @id @default(autoincrement())
+  name            String
+  createdAt       DateTime          @default(now())
+  ownerId         Int
+  Cart            Cart[]
+  User            User              @relation(fields: [ownerId], references: [id])
+  GroupMembership GroupMembership[]
+}
+
+model GroupMembership {
+  groupId     Int
+  userId      Int
+  roleInGroup String?
+  joinedTime  DateTime @default(now())
+  Group       Group    @relation(fields: [groupId], references: [id])
+  User        User     @relation(fields: [userId], references: [id])
+
+  @@id([groupId, userId])
+}
+
+model MenuItem {
+  id           Int         @id @default(autoincrement())
+  category     String
+  ingredients  String
+  name         String
+  description  String?
+  price        Decimal
+  imageUrl     String?
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @default(now()) @updatedAt
+  restaurantId Int
+  CartItem     CartItem[]
+  Restaurant   Restaurant  @relation(fields: [restaurantId], references: [id])
+  OrderItem    OrderItem[]
+}
+
+model Order {
+  id               Int                @id @default(autoincrement())
+  totalPrice       Decimal
+  orderDate        DateTime           @default(now())
+  statusId         Int
+  paymentMethodId  Int?
+  PaymentMethod    PaymentMethod?     @relation(fields: [paymentMethodId], references: [id])
+  OrderStatus      OrderStatus        @relation(fields: [statusId], references: [id])
+  OrderGroupMember OrderGroupMember[]
+  OrderItem        OrderItem[]
+  Payment          Payment[]
+}
+
+model OrderGroupMember {
+  orderId Int
+  userId  Int
+  Order   Order @relation(fields: [orderId], references: [id])
+  User    User  @relation(fields: [userId], references: [id])
+
+  @@id([orderId, userId])
+}
+
+model OrderItem {
+  id                 Int      @id @default(autoincrement())
+  priceAtOrder       Decimal
+  nameAtOrder        String
+  imageUrlAtOrder    String?
+  descriptionAtOrder String?
+  quantity           Int
+  specialRequest     String?
+  orderId            Int
+  menuItemId         Int
+  userId             Int?
+  MenuItem           MenuItem @relation(fields: [menuItemId], references: [id])
+  Order              Order    @relation(fields: [orderId], references: [id])
+  User               User?    @relation(fields: [userId], references: [id])
+}
+
+model OrderStatus {
+  id    Int     @id @default(autoincrement())
+  name  String
+  Order Order[]
+}
+
+model Payment {
+  id                   Int            @id @default(autoincrement())
+  amount               Decimal
+  status               String
+  transactionReference String?
+  paymentDate          DateTime       @default(now())
+  orderId              Int
+  userId               Int
+  paymentMethodId      Int?
+  Order                Order          @relation(fields: [orderId], references: [id])
+  PaymentMethod        PaymentMethod? @relation(fields: [paymentMethodId], references: [id])
+  User                 User           @relation(fields: [userId], references: [id])
+}
+
+model PaymentMethod {
+  id            Int       @id @default(autoincrement())
+  type          String
+  accountNumber String
+  expiryDate    DateTime
+  isDefault     Boolean   @default(false)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @default(now()) @updatedAt
+  userId        Int
+  Order         Order[]
+  Payment       Payment[]
+  User          User      @relation(fields: [userId], references: [id])
+}
+
+model Restaurant {
+  id          Int        @id @default(autoincrement())
+  name        String
+  description String?
+  logoUrl     String?
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @default(now()) @updatedAt
+  Address     Address[]
+  MenuItem    MenuItem[]
+}
+
+model Role {
+  id          Int        @id @default(autoincrement())
+  name        String
+  description String?
+  UserRole    UserRole[]
+}
+
+model User {
+  id               Int                @id @default(autoincrement())
+  email            String             @unique
+  createdAt        DateTime           @default(now())
+  firstName        String
+  lastName         String
+  phoneNumber      String?
+  profilePhotoUrl  String?
+  updatedAt        DateTime           @default(now()) @updatedAt
+  Cart             Cart[]
+  CartItem         CartItem[]
+  Group            Group[]
+  GroupMembership  GroupMembership[]
+  OrderGroupMember OrderGroupMember[]
+  OrderItem        OrderItem[]
+  Payment          Payment[]
+  PaymentMethod    PaymentMethod[]
+  UserRole         UserRole[]
+}
+
+model UserRole {
+  userId     Int
+  roleId     Int
+  assignedAt DateTime @default(now())
+  Role       Role     @relation(fields: [roleId], references: [id])
+  User       User     @relation(fields: [userId], references: [id])
+
+  @@id([userId, roleId])
+}
