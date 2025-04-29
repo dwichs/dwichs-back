@@ -43,43 +43,83 @@ async function main() {
   ]);
 
   // 4. Create Restaurant
-  const restaurant = await prisma.restaurant.create({
-    data: {
-      name: "Burger Palace",
-      description: "Home of the best burgers in town",
-      Address: {
-        create: {
-          street: "456 Yummy Lane",
-          city: "Foodville",
-          state: "NY",
-          postalCode: "67890",
-          country: "USA",
+  const [restaurant1, restuarant2] = await Promise.all([
+    prisma.restaurant.create({
+      data: {
+        name: "Burger Palace",
+        description: "Home of the best burgers in town",
+        Address: {
+          create: {
+            street: "456 Yummy Lane",
+            city: "Foodville",
+            state: "NY",
+            postalCode: "67890",
+            country: "USA",
+          },
+        },
+        MenuItem: {
+          create: [
+            {
+              name: "Classic Burger",
+              category: "Burgers",
+              price: new Prisma.Decimal("12.99"),
+              ingredients: "Beef patty, lettuce, tomato, onion",
+              description: "Our signature burger",
+            },
+            {
+              name: "Veggie Burger",
+              category: "Burgers",
+              price: new Prisma.Decimal("11.99"),
+              ingredients: "Black bean patty, avocado, sprouts",
+              description: "Vegetarian delight",
+            },
+          ],
         },
       },
-      MenuItem: {
-        create: [
-          {
-            name: "Classic Burger",
-            category: "Burgers",
-            price: new Prisma.Decimal("12.99"),
-            ingredients: "Beef patty, lettuce, tomato, onion",
-            description: "Our signature burger",
-          },
-          {
-            name: "Veggie Burger",
-            category: "Burgers",
-            price: new Prisma.Decimal("11.99"),
-            ingredients: "Black bean patty, avocado, sprouts",
-            description: "Vegetarian delight",
-          },
-        ],
+      include: {
+        Address: true,
+        MenuItem: true,
       },
-    },
-    include: {
-      Address: true,
-      MenuItem: true,
-    },
-  });
+    }),
+
+    prisma.restaurant.create({
+      data: {
+        name: "switch",
+        description: "le switch wavre",
+        Address: {
+          create: {
+            street: "456 Yummy Lane",
+            city: "wavre",
+            state: "bw",
+            postalCode: "67890",
+            country: "BE",
+          },
+        },
+        MenuItem: {
+          create: [
+            {
+              name: "Classic Burger",
+              category: "Burgers",
+              price: new Prisma.Decimal("12.99"),
+              ingredients: "Beef patty, lettuce, tomato, onion",
+              description: "Our signature burger",
+            },
+            {
+              name: "Veggie Burger",
+              category: "Burgers",
+              price: new Prisma.Decimal("11.99"),
+              ingredients: "Black bean patty, avocado, sprouts",
+              description: "Vegetarian delight",
+            },
+          ],
+        },
+      },
+      include: {
+        Address: true,
+        MenuItem: true,
+      },
+    }),
+  ]);
 
   // 5. Create Group
   const group = await prisma.group.create({
@@ -108,14 +148,14 @@ async function main() {
       data: [
         {
           cartId: cart.id,
-          menuItemId: restaurant.MenuItem[0].id,
+          menuItemId: restaurant1.MenuItem[0].id,
           quantity: 2,
           userId: user1.id,
           specialRequest: "No onions",
         },
         {
           cartId: cart.id,
-          menuItemId: restaurant.MenuItem[1].id,
+          menuItemId: restaurant1.MenuItem[1].id,
           quantity: 1,
           userId: user2.id,
         },
@@ -153,14 +193,14 @@ async function main() {
             priceAtOrder: new Prisma.Decimal("12.99"),
             nameAtOrder: "Classic Burger",
             quantity: 2,
-            menuItemId: restaurant.MenuItem[0].id,
+            menuItemId: restaurant1.MenuItem[0].id,
             userId: user1.id,
           },
           {
             priceAtOrder: new Prisma.Decimal("11.99"),
             nameAtOrder: "Veggie Burger",
             quantity: 1,
-            menuItemId: restaurant.MenuItem[1].id,
+            menuItemId: restaurant1.MenuItem[1].id,
             userId: user2.id,
           },
         ],
