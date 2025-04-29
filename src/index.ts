@@ -43,23 +43,28 @@ app.get("/restaurants", async (c) => {
   }
 });
 
-app.get("/restaurants/:id/menu-items", (c) => {
-  async function main() {
-    const restaurants = await prisma.restaurant.findMany();
-    console.log(restaurants);
-  }
+app.get("/restaurants/:id/menu-items", async (c) => {
+  try {
+    const id = Number(c.req.param("id"));
 
-  main()
-    .then(async () => {
-      await prisma.$disconnect();
-    })
-    .catch(async (e) => {
-      console.error(e);
-      await prisma.$disconnect();
-      process.exit(1);
+    const menuItems = await prisma.menuItem.findMany({
+      where: {
+        restaurantId: id,
+      },
     });
-
-  return c.text(`${c.req.param("id")}`);
+    return c.json({
+      success: true,
+      data: menuItems,
+    });
+  } catch (error) {
+    return c.json(
+      {
+        success: false,
+        error: "Failed to fetch menuItems",
+      },
+      500,
+    );
+  }
 });
 
 serve(
