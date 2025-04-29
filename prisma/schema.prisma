@@ -157,7 +157,7 @@ model PaymentMethod {
 
 model Restaurant {
   id          Int        @id @default(autoincrement())
-  name        String
+  name        String     @unique
   description String?
   logoUrl     String?
   createdAt   DateTime   @default(now())
