@@ -52,6 +52,7 @@ app.get("/restaurants/:id", async (c) => {
         restaurantId: id,
       },
     });
+
     return c.json({
       success: true,
       data: menuItems,
@@ -60,7 +61,7 @@ app.get("/restaurants/:id", async (c) => {
     return c.json(
       {
         success: false,
-        error: "Failed to fetch menuItems",
+        error: `Failed to fetch menuItems: ${error.message}`,
       },
       500,
     );
