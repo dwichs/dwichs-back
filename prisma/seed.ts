@@ -1,229 +1,133 @@
-import { PrismaClient, Prisma } from "../generated/prisma/client.js";
-
+import { PrismaClient } from "../generated/prisma/client.js";
 const prisma = new PrismaClient();
 
 async function main() {
-  // 1. Create Roles
-  const [adminRole, userRole] = await Promise.all([
-    prisma.role.create({
-      data: { name: "admin", description: "Administrator" },
-    }),
-    prisma.role.create({
-      data: { name: "user", description: "Regular User" },
-    }),
-  ]);
+  // Create 2 users
+  const user1 = await prisma.user.create({
+    data: {
+      id: "user1",
+      name: "John Doe",
+      email: "john@example.com",
+      emailVerified: true,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    },
+  });
 
-  // 2. Create Users
-  const [user1, user2] = await Promise.all([
-    prisma.user.create({
-      data: {
-        firstName: "John",
-        lastName: "Doe",
-        email: "john.doe@example.com",
-        phoneNumber: "+1234567890",
+  const user2 = await prisma.user.create({
+    data: {
+      id: "user2",
+      name: "Jane Smith",
+      email: "jane@example.com",
+      emailVerified: true,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    },
+  });
+
+  // Create 5 restaurants with addresses
+  const restaurants = [
+    {
+      name: "Bistro Central",
+      description: "French cuisine at its finest",
+      logoUrl: "https://example.com/bistro.jpg",
+      address: {
+        street: "123 Main St",
+        city: "New York",
+        state: "NY",
+        postalCode: "10001",
+        country: "USA",
+        latitude: 40.7128,
+        longitude: -74.006,
       },
-    }),
-    prisma.user.create({
-      data: {
-        firstName: "Jane",
-        lastName: "Smith",
-        email: "jane.smith@example.com",
+    },
+    {
+      name: "Pasta Palace",
+      description: "Authentic Italian pasta dishes",
+      logoUrl: "https://example.com/pasta.jpg",
+      address: {
+        street: "456 Elm St",
+        city: "Chicago",
+        state: "IL",
+        postalCode: "60601",
+        country: "USA",
+        latitude: 41.8781,
+        longitude: -87.6298,
       },
-    }),
-  ]);
+    },
+    {
+      name: "Sushi World",
+      description: "Fresh Japanese sushi",
+      logoUrl: "https://example.com/sushi.jpg",
+      address: {
+        street: "789 Oak St",
+        city: "Los Angeles",
+        state: "CA",
+        postalCode: "90001",
+        country: "USA",
+        latitude: 34.0522,
+        longitude: -118.2437,
+      },
+    },
+    {
+      name: "Burger Barn",
+      description: "Classic American burgers",
+      logoUrl: "https://example.com/burger.jpg",
+      address: {
+        street: "101 Pine St",
+        city: "Austin",
+        state: "TX",
+        postalCode: "73301",
+        country: "USA",
+        latitude: 30.2672,
+        longitude: -97.7431,
+      },
+    },
+    {
+      name: "Taco Fiesta",
+      description: "Mexican street food",
+      logoUrl: "https://example.com/taco.jpg",
+      address: {
+        street: "202 Maple St",
+        city: "Miami",
+        state: "FL",
+        postalCode: "33101",
+        country: "USA",
+        latitude: 25.7617,
+        longitude: -80.1918,
+      },
+    },
+  ];
 
-  // 3. Assign Roles
-  await Promise.all([
-    prisma.userRole.create({
-      data: { userId: user1.id, roleId: adminRole.id },
-    }),
-    prisma.userRole.create({
-      data: { userId: user2.id, roleId: userRole.id },
-    }),
-  ]);
-
-  // 4. Create Restaurant
-  const [restaurant1, restuarant2] = await Promise.all([
-    prisma.restaurant.create({
+  for (const restaurantData of restaurants) {
+    await prisma.restaurant.create({
       data: {
-        name: "Burger Palace",
-        description: "Home of the best burgers in town",
+        name: restaurantData.name,
+        description: restaurantData.description,
+        logoUrl: restaurantData.logoUrl,
         Address: {
           create: {
-            street: "456 Yummy Lane",
-            city: "Foodville",
-            state: "NY",
-            postalCode: "67890",
-            country: "USA",
+            street: restaurantData.address.street,
+            city: restaurantData.address.city,
+            state: restaurantData.address.state,
+            postalCode: restaurantData.address.postalCode,
+            country: restaurantData.address.country,
+            latitude: restaurantData.address.latitude,
+            longitude: restaurantData.address.longitude,
           },
         },
-        MenuItem: {
-          create: [
-            {
-              name: "Classic Burger",
-              category: "Burgers",
-              price: new Prisma.Decimal("12.99"),
-              ingredients: "Beef patty, lettuce, tomato, onion",
-              description: "Our signature burger",
-            },
-            {
-              name: "Veggie Burger",
-              category: "Burgers",
-              price: new Prisma.Decimal("11.99"),
-              ingredients: "Black bean patty, avocado, sprouts",
-              description: "Vegetarian delight",
-            },
-          ],
-        },
-      },
-      include: {
-        Address: true,
-        MenuItem: true,
-      },
-    }),
-
-    prisma.restaurant.create({
-      data: {
-        name: "switch",
-        description: "le switch wavre",
-        Address: {
-          create: {
-            street: "456 Yummy Lane",
-            city: "wavre",
-            state: "bw",
-            postalCode: "67890",
-            country: "BE",
-          },
-        },
-        MenuItem: {
-          create: [
-            {
-              name: "Classic Burger",
-              category: "Burgers",
-              price: new Prisma.Decimal("12.99"),
-              ingredients: "Beef patty, lettuce, tomato, onion",
-              description: "Our signature burger",
-            },
-            {
-              name: "Veggie Burger",
-              category: "Burgers",
-              price: new Prisma.Decimal("11.99"),
-              ingredients: "Black bean patty, avocado, sprouts",
-              description: "Vegetarian delight",
-            },
-          ],
-        },
-      },
-      include: {
-        Address: true,
-        MenuItem: true,
-      },
-    }),
-  ]);
-
-  // 5. Create Group
-  const group = await prisma.group.create({
-    data: {
-      name: "Office Lunch Group",
-      ownerId: user1.id,
-      GroupMembership: {
-        create: [
-          { userId: user1.id, roleInGroup: "Organizer" },
-          { userId: user2.id, roleInGroup: "Participant" },
-        ],
-      },
-    },
-  });
-
-  // 6. Create Cart with Transaction
-  const cart = await prisma.$transaction(async (tx) => {
-    const cart = await tx.cart.create({
-      data: {
-        groupId: group.id,
-        userId: user1.id,
       },
     });
+  }
 
-    await tx.cartItem.createMany({
-      data: [
-        {
-          cartId: cart.id,
-          menuItemId: restaurant1.MenuItem[0].id,
-          quantity: 2,
-          userId: user1.id,
-          specialRequest: "No onions",
-        },
-        {
-          cartId: cart.id,
-          menuItemId: restaurant1.MenuItem[1].id,
-          quantity: 1,
-          userId: user2.id,
-        },
-      ],
-    });
-    return cart;
-  });
-
-  // 7. Order Statuses
-  const [pendingStatus, completedStatus] = await Promise.all([
-    prisma.orderStatus.create({ data: { name: "Pending" } }),
-    prisma.orderStatus.create({ data: { name: "Completed" } }),
-  ]);
-
-  // 8. Payment Method
-  const paymentMethod = await prisma.paymentMethod.create({
-    data: {
-      type: "Credit Card",
-      accountNumber: "**** **** **** 1234",
-      expiryDate: new Date("2025-12-31"),
-      isDefault: true,
-      userId: user1.id,
-    },
-  });
-
-  // 9. Create Order
-  const order = await prisma.order.create({
-    data: {
-      totalPrice: new Prisma.Decimal("37.97"),
-      statusId: completedStatus.id,
-      paymentMethodId: paymentMethod.id,
-      OrderItem: {
-        create: [
-          {
-            priceAtOrder: new Prisma.Decimal("12.99"),
-            nameAtOrder: "Classic Burger",
-            quantity: 2,
-            menuItemId: restaurant1.MenuItem[0].id,
-            userId: user1.id,
-          },
-          {
-            priceAtOrder: new Prisma.Decimal("11.99"),
-            nameAtOrder: "Veggie Burger",
-            quantity: 1,
-            menuItemId: restaurant1.MenuItem[1].id,
-            userId: user2.id,
-          },
-        ],
-      },
-      OrderGroupMember: {
-        create: [{ userId: user1.id }, { userId: user2.id }],
-      },
-    },
-  });
-
-  // 10. Payment
-  await prisma.payment.create({
-    data: {
-      amount: new Prisma.Decimal("37.97"),
-      status: "Completed",
-      paymentMethodId: paymentMethod.id,
-      userId: user1.id,
-      orderId: order.id,
-      transactionReference: "TX123456789",
-    },
-  });
+  console.log("Seeding completed successfully!");
 }
 
 main()
-  .catch(console.error)
-  .finally(() => prisma.$disconnect());
+  .catch((e) => {
+    console.error(e);
+    process.exit(1);
+  })
+  .finally(async () => {
+    await prisma.$disconnect();
+  });

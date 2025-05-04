@@ -1,10 +1,26 @@
 import { serve } from "@hono/node-server";
 import { Hono } from "hono";
+import { cors } from "hono/cors";
 
 import { PrismaClient } from "../generated/prisma/client.js";
 const prisma = new PrismaClient();
 
-const app = new Hono();
+import { auth } from "./lib/auth.js";
+import type { AuthType } from "./lib/auth.js";
+
+const app = new Hono<{ Bindings: AuthType }>();
+
+app.use(
+  "/*",
+  cors({
+    origin: ["http://localhost:5173"], // Your SvelteKit frontend URL
+    allowMethods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allowHeaders: ["Content-Type", "Authorization"],
+    credentials: true, // Required for cookies/auth
+  }),
+);
+
+app.on(["POST", "GET"], "/api/auth/**", (c) => auth.handler(c.req.raw));
 
 app.get("/", (c) => {
   async function main() {

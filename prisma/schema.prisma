@@ -27,7 +27,7 @@ model Cart {
   id        Int        @id @default(autoincrement())
   createdAt DateTime   @default(now())
   updatedAt DateTime   @default(now()) @updatedAt
-  userId    Int?
+  userId    String?
   groupId   Int?
   Group     Group?     @relation(fields: [groupId], references: [id])
   User      User?      @relation(fields: [userId], references: [id])
@@ -40,7 +40,7 @@ model CartItem {
   specialRequest String?
   cartId         Int
   menuItemId     Int
-  userId         Int?
+  userId         String?
   Cart           Cart     @relation(fields: [cartId], references: [id])
   MenuItem       MenuItem @relation(fields: [menuItemId], references: [id])
   User           User?    @relation(fields: [userId], references: [id])
@@ -50,7 +50,7 @@ model Group {
   id              Int               @id @default(autoincrement())
   name            String
   createdAt       DateTime          @default(now())
-  ownerId         Int
+  ownerId         String
   Cart            Cart[]
   User            User              @relation(fields: [ownerId], references: [id])
   GroupMembership GroupMembership[]
@@ -58,7 +58,7 @@ model Group {
 
 model GroupMembership {
   groupId     Int
-  userId      Int
+  userId      String
   roleInGroup String?
   joinedTime  DateTime @default(now())
   Group       Group    @relation(fields: [groupId], references: [id])
@@ -98,9 +98,9 @@ model Order {
 
 model OrderGroupMember {
   orderId Int
-  userId  Int
-  Order   Order @relation(fields: [orderId], references: [id])
-  User    User  @relation(fields: [userId], references: [id])
+  userId  String
+  Order   Order  @relation(fields: [orderId], references: [id])
+  User    User   @relation(fields: [userId], references: [id])
 
   @@id([orderId, userId])
 }
@@ -115,7 +115,7 @@ model OrderItem {
   specialRequest     String?
   orderId            Int
   menuItemId         Int
-  userId             Int?
+  userId             String?
   MenuItem           MenuItem @relation(fields: [menuItemId], references: [id])
   Order              Order    @relation(fields: [orderId], references: [id])
   User               User?    @relation(fields: [userId], references: [id])
@@ -134,7 +134,7 @@ model Payment {
   transactionReference String?
   paymentDate          DateTime       @default(now())
   orderId              Int
-  userId               Int
+  userId               String
   paymentMethodId      Int?
   Order                Order          @relation(fields: [orderId], references: [id])
   PaymentMethod        PaymentMethod? @relation(fields: [paymentMethodId], references: [id])
@@ -149,7 +149,7 @@ model PaymentMethod {
   isDefault     Boolean   @default(false)
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @default(now()) @updatedAt
-  userId        Int
+  userId        String
   Order         Order[]
   Payment       Payment[]
   User          User      @relation(fields: [userId], references: [id])
@@ -173,15 +173,26 @@ model Role {
   UserRole    UserRole[]
 }
 
+model UserRole {
+  userId     String
+  roleId     Int
+  assignedAt DateTime @default(now())
+  Role       Role     @relation(fields: [roleId], references: [id])
+  User       User     @relation(fields: [userId], references: [id])
+
+  @@id([userId, roleId])
+}
+
 model User {
-  id               Int                @id @default(autoincrement())
-  email            String             @unique
-  createdAt        DateTime           @default(now())
-  firstName        String
-  lastName         String
-  phoneNumber      String?
-  profilePhotoUrl  String?
-  updatedAt        DateTime           @default(now()) @updatedAt
+  id               String             @id
+  name             String
+  email            String
+  emailVerified    Boolean
+  image            String?
+  createdAt        DateTime
+  updatedAt        DateTime
+  sessions         Session[]
+  accounts         Account[]
   Cart             Cart[]
   CartItem         CartItem[]
   Group            Group[]
@@ -191,14 +202,52 @@ model User {
   Payment          Payment[]
   PaymentMethod    PaymentMethod[]
   UserRole         UserRole[]
+
+  @@unique([email])
+  @@map("user")
 }
 
-model UserRole {
-  userId     Int
-  roleId     Int
-  assignedAt DateTime @default(now())
-  Role       Role     @relation(fields: [roleId], references: [id])
-  User       User     @relation(fields: [userId], references: [id])
+model Session {
+  id        String   @id
+  expiresAt DateTime
+  token     String
+  createdAt DateTime
+  updatedAt DateTime
+  ipAddress String?
+  userAgent String?
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  @@id([userId, roleId])
+  @@unique([token])
+  @@map("session")
+}
+
+model Account {
+  id                    String    @id
+  accountId             String
+  providerId            String
+  userId                String
+  user                  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  accessToken           String?
+  refreshToken          String?
+  idToken               String?
+  accessTokenExpiresAt  DateTime?
+  refreshTokenExpiresAt DateTime?
+  scope                 String?
+  password              String?
+  createdAt             DateTime
+  updatedAt             DateTime
+
+  @@map("account")
+}
+
+model Verification {
+  id         String    @id
+  identifier String
+  value      String
+  expiresAt  DateTime
+  createdAt  DateTime?
+  updatedAt  DateTime?
+
+  @@map("verification")
 }
