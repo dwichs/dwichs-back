@@ -1,10 +1,21 @@
 import { serve } from "@hono/node-server";
 import { Hono } from "hono";
+import { cors } from "hono/cors";
 
 import { PrismaClient } from "../generated/prisma/client.js";
 const prisma = new PrismaClient();
 
 const app = new Hono();
+
+app.use(
+  "/*",
+  cors({
+    origin: ["http://localhost:5173"], // Your SvelteKit frontend URL
+    allowMethods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allowHeaders: ["Content-Type", "Authorization"],
+    credentials: true, // Required for cookies/auth
+  }),
+);
 
 app.get("/", (c) => {
   async function main() {
