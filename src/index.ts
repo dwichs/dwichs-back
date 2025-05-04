@@ -5,7 +5,10 @@ import { cors } from "hono/cors";
 import { PrismaClient } from "../generated/prisma/client.js";
 const prisma = new PrismaClient();
 
-const app = new Hono();
+import { auth } from "./lib/auth.js";
+import type { AuthType } from "./lib/auth.js";
+
+const app = new Hono<{ Bindings: AuthType }>();
 
 app.use(
   "/*",
@@ -16,6 +19,8 @@ app.use(
     credentials: true, // Required for cookies/auth
   }),
 );
+
+app.on(["POST", "GET"], "/api/auth/**", (c) => auth.handler(c.req.raw));
 
 app.get("/", (c) => {
   async function main() {
