@@ -8,7 +8,13 @@ const prisma = new PrismaClient();
 import { auth } from "./lib/auth.js";
 import type { AuthType } from "./lib/auth.js";
 
-const app = new Hono<{ Bindings: AuthType }>();
+const app = new Hono<{
+  Bindings: AuthType;
+  Variables: {
+    user: typeof auth.$Infer.Session.user | null;
+    session: typeof auth.$Infer.Session.session | null;
+  };
+}>();
 
 app.use(
   "/*",
@@ -20,26 +26,40 @@ app.use(
   }),
 );
 
-app.on(["POST", "GET"], "/api/auth/**", (c) => auth.handler(c.req.raw));
+app.use("*", async (c, next) => {
+  const session = await auth.api.getSession({ headers: c.req.raw.headers });
 
-app.get("/", (c) => {
-  async function main() {
-    const allUsers = await prisma.user.findMany();
-    console.log(allUsers);
+  if (!session) {
+    c.set("user", null);
+    c.set("session", null);
+    return next();
   }
 
-  main()
-    .then(async () => {
-      await prisma.$disconnect();
-    })
-    .catch(async (e) => {
-      console.error(e);
-      await prisma.$disconnect();
-      process.exit(1);
-    });
-
-  return c.text("Hello Hono!");
+  c.set("user", session.user);
+  c.set("session", session.session);
+  return next();
 });
+
+app.on(["POST", "GET"], "/api/auth/**", (c) => auth.handler(c.req.raw));
+
+// app.get("/", (c) => {
+//   async function main() {
+//     const allUsers = await prisma.user.findMany();
+//     console.log(allUsers);
+//   }
+//
+//   main()
+//     .then(async () => {
+//       await prisma.$disconnect();
+//     })
+//     .catch(async (e) => {
+//       console.error(e);
+//       await prisma.$disconnect();
+//       process.exit(1);
+//     });
+//
+//   return c.text("Hello Hono!");
+// });
 
 app.get("/restaurants", async (c) => {
   try {
