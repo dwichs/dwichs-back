@@ -120,6 +120,57 @@ async function main() {
     });
   }
 
+  // create order items
+  await prisma.menuItem.createMany({
+    data: [
+      {
+        name: "Margherita Pizza",
+        category: "Pizza",
+        ingredients: "Tomato sauce, mozzarella, basil",
+        description: "Classic Italian pizza with fresh basil",
+        price: 12.99,
+        imageUrl: "https://example.com/pizza.jpg",
+        restaurantId: 1,
+      },
+      {
+        name: "Caesar Salad",
+        category: "Salad",
+        ingredients: "Romaine lettuce, croutons, parmesan, Caesar dressing",
+        description: "Fresh crisp salad with homemade dressing",
+        price: 8.99,
+        imageUrl: "https://example.com/salad.jpg",
+        restaurantId: 1,
+      },
+      {
+        name: "Beef Burger",
+        category: "Burger",
+        ingredients: "Beef patty, cheese, lettuce, tomato, onion",
+        description: "Juicy 1/2 pound beef burger with all the fixings",
+        price: 10.99,
+        imageUrl: "https://example.com/burger.jpg",
+        restaurantId: 1,
+      },
+      {
+        name: "Chocolate Cake",
+        category: "Dessert",
+        ingredients: "Flour, eggs, chocolate, sugar, butter",
+        description: "Rich chocolate cake with fudge frosting",
+        price: 6.99,
+        imageUrl: "https://example.com/cake.jpg",
+        restaurantId: 1,
+      },
+      {
+        name: "Iced Coffee",
+        category: "Drink",
+        ingredients: "Coffee, milk, ice, sugar",
+        description: "Refreshing cold coffee drink",
+        price: 3.99,
+        imageUrl: "https://example.com/coffee.jpg",
+        restaurantId: 1,
+      },
+    ],
+    skipDuplicates: true,
+  });
   console.log("Seeding completed successfully!");
 }
 
