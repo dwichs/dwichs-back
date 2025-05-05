@@ -104,6 +104,18 @@ app.get("/restaurants/:id", async (c) => {
   }
 });
 
+app.post("/cart", async (c) => {
+  const { id } = c.get("user");
+  const session = c.get("session");
+
+  console.log(id);
+
+  const { menuItemId } = await c.req.json();
+  console.log(menuItemId);
+
+  return c.json({ session });
+});
+
 serve(
   {
     fetch: app.fetch,
