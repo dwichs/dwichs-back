@@ -46,7 +46,10 @@ app.use("/api/auth/sign-up/*", async (c, next) => {
   await next();
 
   if (c.res.ok) {
-    createUserCart(c.get("user"));
+    const response = c.res.clone();
+    const data = await response.json();
+
+    createUserCart(data.user);
   }
 });
 
