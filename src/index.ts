@@ -8,6 +8,8 @@ const prisma = new PrismaClient();
 import { auth } from "./lib/auth.js";
 import type { AuthType } from "./lib/auth.js";
 
+import { createUserCart } from "./lib/misc.js";
+
 const app = new Hono<{
   Bindings: AuthType;
   Variables: {
@@ -40,7 +42,18 @@ app.use("*", async (c, next) => {
   return next();
 });
 
-app.on(["POST", "GET"], "/api/auth/**", (c) => auth.handler(c.req.raw));
+app.use("/api/auth/sign-up/*", async (c, next) => {
+  await next();
+
+  if (c.res.ok) {
+    createUserCart(c.get("user"));
+  }
+});
+
+// General auth handler
+app.on(["POST", "GET"], "/api/auth/*", (c) => {
+  return auth.handler(c.req.raw);
+});
 
 // app.get("/", (c) => {
 //   async function main() {
