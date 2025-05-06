@@ -8,7 +8,7 @@ const prisma = new PrismaClient();
 import { auth } from "./lib/auth.js";
 import type { AuthType } from "./lib/auth.js";
 
-import { createUserCart } from "./lib/misc.js";
+import { createUserCart, addMenuItemToCart } from "./lib/misc.js";
 
 const app = new Hono<{
   Bindings: AuthType;
@@ -58,24 +58,9 @@ app.on(["POST", "GET"], "/api/auth/*", (c) => {
   return auth.handler(c.req.raw);
 });
 
-// app.get("/", (c) => {
-//   async function main() {
-//     const allUsers = await prisma.user.findMany();
-//     console.log(allUsers);
-//   }
-//
-//   main()
-//     .then(async () => {
-//       await prisma.$disconnect();
-//     })
-//     .catch(async (e) => {
-//       console.error(e);
-//       await prisma.$disconnect();
-//       process.exit(1);
-//     });
-//
-//   return c.text("Hello Hono!");
-// });
+app.get("/", (c) => {
+  return c.text("Hello Hono!");
+});
 
 app.get("/restaurants", async (c) => {
   try {
@@ -121,15 +106,36 @@ app.get("/restaurants/:id", async (c) => {
 });
 
 app.post("/cart", async (c) => {
-  const { id } = c.get("user");
   const session = c.get("session");
+  if (!session) {
+    return c.json({ error: "Unauthorized" }, 401); // 401 for unauthorized
+  }
 
-  console.log(id);
+  const user = c.get("user");
 
-  const { menuItemId } = await c.req.json();
-  console.log(menuItemId);
+  try {
+    const body = await c.req.json();
+    if (!body.menuItemId) {
+      return c.json({ error: "menuItemId is required" }, 400);
+    }
 
-  return c.json({ session });
+    await addMenuItemToCart(user, body.menuItemId); // Make sure this is awaited!
+
+    return c.json({ message: "Menu item added to cart" }, 201);
+  } catch (err) {
+    console.error("Cart error:", err);
+
+    // let status;
+    //
+    // // Differentiate between client and server errors
+    // if (err instanceof prisma.PrismaClientKnownRequestError) {
+    //   // Handle Prisma-specific errors (400 Bad Request)
+    //   return c.json({ error: "Database error", details: err.message }, 400);
+    // } else {
+    //   // Generic server error (500)
+    //
+    return c.json({ error: "Failed to update cart" }, 500);
+  }
 });
 
 serve(

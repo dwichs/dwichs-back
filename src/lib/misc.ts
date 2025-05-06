@@ -8,3 +8,22 @@ export const createUserCart = async (user) => {
     },
   });
 };
+
+export const addMenuItemToCart = async (user, menuItemId) => {
+  const cartId = await prisma.cart.findUnique({
+    where: {
+      userId: user.id,
+    },
+    select: {
+      id: true,
+    },
+  });
+
+  await prisma.cartItem.create({
+    data: {
+      cartId: cartId.id,
+      userId: user.id,
+      menuItemId: menuItemId,
+    },
+  });
+};
