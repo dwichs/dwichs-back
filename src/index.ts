@@ -8,7 +8,7 @@ const prisma = new PrismaClient();
 import { auth } from "./lib/auth.js";
 import type { AuthType } from "./lib/auth.js";
 
-import { createUserCart, addMenuItemToCart } from "./lib/misc.js";
+import { createUserCart, addMenuItemToCart, getCartItems } from "./lib/misc.js";
 
 const app = new Hono<{
   Bindings: AuthType;
@@ -103,6 +103,22 @@ app.get("/restaurants/:id", async (c) => {
       500,
     );
   }
+});
+
+app.get("/cart", async (c) => {
+  const session = c.get("session");
+  if (!session) {
+    return c.json({ error: "Unauthorized" }, 401); // 401 for unauthorized
+  }
+
+  const user = c.get("user");
+
+  const cartItems = await getCartItems(user);
+
+  return c.json({
+    success: true,
+    data: cartItems,
+  });
 });
 
 app.post("/cart", async (c) => {

@@ -27,3 +27,13 @@ export const addMenuItemToCart = async (user, menuItemId) => {
     },
   });
 };
+
+export const getCartItems = async (user) => {
+  const cartItems = await prisma.cartItem.findMany({
+    where: {
+      userId: user.id,
+    },
+  });
+
+  return cartItems;
+};
