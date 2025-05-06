@@ -36,11 +36,10 @@ model Cart {
 
 model CartItem {
   id             Int      @id @default(autoincrement())
-  quantity       Int
   specialRequest String?
   cartId         Int
   menuItemId     Int
-  userId         String?
+  userId         String
   Cart           Cart     @relation(fields: [cartId], references: [id])
   MenuItem       MenuItem @relation(fields: [menuItemId], references: [id])
   User           User?    @relation(fields: [userId], references: [id])
