@@ -105,7 +105,7 @@ app.get("/restaurants/:id", async (c) => {
   }
 });
 
-app.get("/cart", async (c) => {
+app.get("/cart/items", async (c) => {
   const session = c.get("session");
   if (!session) {
     return c.json({ error: "Unauthorized" }, 401); // 401 for unauthorized
@@ -113,11 +113,11 @@ app.get("/cart", async (c) => {
 
   const user = c.get("user");
 
-  const cartItems = await getCartItems(user);
+  const menuItems = await getCartItems(user);
 
   return c.json({
     success: true,
-    data: cartItems,
+    data: menuItems,
   });
 });
 

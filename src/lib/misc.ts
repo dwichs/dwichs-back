@@ -29,11 +29,21 @@ export const addMenuItemToCart = async (user, menuItemId) => {
 };
 
 export const getCartItems = async (user) => {
-  const cartItems = await prisma.cartItem.findMany({
+  const cartWithMenuItems = await prisma.cart.findFirst({
     where: {
-      userId: user.id,
+      userId: user.id, // or groupId if it's a group cart
+    },
+    include: {
+      items: {
+        include: {
+          MenuItem: true, // Include full menu item details
+        },
+      },
     },
   });
 
-  return cartItems;
+  const menuItemsInCart =
+    cartWithMenuItems?.items.map((item) => item.MenuItem) || [];
+
+  return menuItemsInCart;
 };
