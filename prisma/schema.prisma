@@ -27,11 +27,11 @@ model Cart {
   id        Int        @id @default(autoincrement())
   createdAt DateTime   @default(now())
   updatedAt DateTime   @default(now()) @updatedAt
-  userId    String     @unique
-  groupId   Int?
-  Group     Group?     @relation(fields: [groupId], references: [id])
-  User      User?      @relation(fields: [userId], references: [id])
-  CartItem  CartItem[]
+  userId    String?    @unique
+  groupId   Int?       @unique
+  user      User?      @relation(fields: [userId], references: [id])
+  group     Group?     @relation(fields: [groupId], references: [id])
+  items     CartItem[]
 }
 
 model CartItem {
@@ -50,9 +50,9 @@ model Group {
   name            String
   createdAt       DateTime          @default(now())
   ownerId         String
-  Cart            Cart[]
   User            User              @relation(fields: [ownerId], references: [id])
   GroupMembership GroupMembership[]
+  Cart            Cart?
 }
 
 model GroupMembership {
