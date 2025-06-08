@@ -154,6 +154,60 @@ app.post("/cart", async (c) => {
   }
 });
 
+app.post("/orders", async (c) => {
+  const session = c.get("session");
+  if (!session) return c.json({ error: "Unauthorized" }, 401);
+
+  const user = c.get("user");
+  const cart = await prisma.cart.findUnique({
+    where: { userId: user.id },
+    include: { items: { include: { MenuItem: true } } },
+  });
+  if (!cart?.items.length) return c.json({ error: "Cart is empty" }, 400);
+
+  const totalPrice = cart.items.reduce(
+    (sum, ci) => sum + Number(ci.MenuItem.price),
+    0,
+  );
+
+  const [orderCreated] = await prisma.$transaction([
+    prisma.order.create({
+      data: {
+        totalPrice,
+        orderDate: new Date(),
+        OrderStatus: { connect: { id: 1 } },
+        orderParticipants: { create: { userId: user.id } },
+        OrderItem: {
+          create: cart.items.map((ci) => ({
+            menuItemId: ci.MenuItem.id,
+            nameAtOrder: ci.MenuItem.name,
+            priceAtOrder: ci.MenuItem.price,
+            imageUrlAtOrder: ci.MenuItem.imageUrl,
+            descriptionAtOrder: ci.MenuItem.description,
+            specialRequest: ci.specialRequest,
+          })),
+        },
+      },
+      include: {
+        OrderStatus: true,
+        orderParticipants: true,
+        OrderItem: true,
+      },
+    }),
+    prisma.cartItem.deleteMany({
+      where: { cartId: cart.id },
+    }),
+  ]);
+
+  return c.json(
+    {
+      message: "Order placed and cart cleared.",
+      order: orderCreated,
+    },
+    201,
+  );
+});
+
 serve(
   {
     fetch: app.fetch,

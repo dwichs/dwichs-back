@@ -28,7 +28,7 @@ async function main() {
   // Create 5 restaurants with addresses
   const restaurants = [
     {
-      name: "Bistro Central",
+      name: "le switch",
       description: "French cuisine at its finest",
       logoUrl: "https://example.com/bistro.jpg",
       address: {
@@ -42,7 +42,7 @@ async function main() {
       },
     },
     {
-      name: "Pasta Palace",
+      name: "zanzibar",
       description: "Authentic Italian pasta dishes",
       logoUrl: "https://example.com/pasta.jpg",
       address: {
@@ -157,7 +157,7 @@ async function main() {
         description: "Rich chocolate cake with fudge frosting",
         price: 6.99,
         imageUrl: "https://example.com/cake.jpg",
-        restaurantId: 1,
+        restaurantId: 2,
       },
       {
         name: "Iced Coffee",
@@ -166,11 +166,24 @@ async function main() {
         description: "Refreshing cold coffee drink",
         price: 3.99,
         imageUrl: "https://example.com/coffee.jpg",
-        restaurantId: 1,
+        restaurantId: 2,
       },
     ],
     skipDuplicates: true,
   });
+
+  const statuses = [
+    { name: "Pending" },
+    { name: "Ready for Pickup" },
+    { name: "Picked Up" },
+    { name: "Cancelled" },
+  ];
+
+  await prisma.orderStatus.createMany({
+    data: statuses,
+    skipDuplicates: true,
+  });
+
   console.log("Seeding completed successfully!");
 }
 

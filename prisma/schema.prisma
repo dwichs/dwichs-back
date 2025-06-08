@@ -90,12 +90,12 @@ model Order {
   paymentMethodId  Int?
   PaymentMethod    PaymentMethod?     @relation(fields: [paymentMethodId], references: [id])
   OrderStatus      OrderStatus        @relation(fields: [statusId], references: [id])
-  OrderGroupMember OrderGroupMember[]
+  orderParticipants  OrderParticipants[]
   OrderItem        OrderItem[]
   Payment          Payment[]
 }
 
-model OrderGroupMember {
+model OrderParticipants  {
   orderId Int
   userId  String
   Order   Order  @relation(fields: [orderId], references: [id])
@@ -110,7 +110,6 @@ model OrderItem {
   nameAtOrder        String
   imageUrlAtOrder    String?
   descriptionAtOrder String?
-  quantity           Int
   specialRequest     String?
   orderId            Int
   menuItemId         Int
@@ -196,7 +195,7 @@ model User {
   CartItem         CartItem[]
   Group            Group[]
   GroupMembership  GroupMembership[]
-  OrderGroupMember OrderGroupMember[]
+  orderParticipants  OrderParticipants[]
   OrderItem        OrderItem[]
   Payment          Payment[]
   PaymentMethod    PaymentMethod[]
