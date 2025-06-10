@@ -76,6 +76,9 @@ export const getUserOrders = async (user) => {
       PaymentMethod: true,
       OrderStatus: true,
     },
+    orderBy: {
+      orderDate: "desc",
+    },
   });
 
   return userOrders;
