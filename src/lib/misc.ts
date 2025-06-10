@@ -47,3 +47,36 @@ export const getCartItems = async (user) => {
 
   return menuItemsInCart;
 };
+
+export const getUserOrders = async (user) => {
+  const userOrders = await prisma.order.findMany({
+    where: {
+      orderParticipants: {
+        some: {
+          userId: user.id,
+        },
+      },
+    },
+    include: {
+      orderParticipants: {
+        include: {
+          User: {
+            select: {
+              id: true,
+              name: true,
+            },
+          },
+        },
+      },
+      OrderItem: {
+        include: {
+          MenuItem: true,
+        },
+      },
+      PaymentMethod: true,
+      OrderStatus: true,
+    },
+  });
+
+  return userOrders;
+};
