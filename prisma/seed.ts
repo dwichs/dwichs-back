@@ -25,6 +25,34 @@ async function main() {
     },
   });
 
+  const role1 = await prisma.role.create({
+    data: {
+      name: "customer",
+      description: "a customer",
+    },
+  });
+
+  const role2 = await prisma.role.create({
+    data: {
+      name: "restaurant",
+      description: "a restaurant",
+    },
+  });
+
+  const userRole1 = await prisma.userRole.create({
+    data: {
+      userId: "user1",
+      roleId: 1,
+    },
+  });
+
+  const userRole2 = await prisma.userRole.create({
+    data: {
+      userId: "user2",
+      roleId: 2,
+    },
+  });
+
   // Create 5 restaurants with addresses
   const restaurants = [
     {

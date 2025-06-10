@@ -85,6 +85,24 @@ app.get("/restaurants", async (c) => {
   }
 });
 
+app.get("/restaurants/orders", async (c) => {
+  try {
+    const restaurants = await prisma.restaurant.findMany();
+    return c.json({
+      success: true,
+      data: restaurants,
+    });
+  } catch (error) {
+    return c.json(
+      {
+        success: false,
+        error: "Failed to fetch restaurants",
+      },
+      500,
+    );
+  }
+});
+
 app.get("/restaurants/:id", async (c) => {
   try {
     const id = Number(c.req.param("id"));
