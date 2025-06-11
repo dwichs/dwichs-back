@@ -83,19 +83,19 @@ model MenuItem {
 }
 
 model Order {
-  id               Int                @id @default(autoincrement())
-  totalPrice       Decimal
-  orderDate        DateTime           @default(now())
-  statusId         Int
-  paymentMethodId  Int?
-  PaymentMethod    PaymentMethod?     @relation(fields: [paymentMethodId], references: [id])
-  OrderStatus      OrderStatus        @relation(fields: [statusId], references: [id])
-  orderParticipants  OrderParticipants[]
-  OrderItem        OrderItem[]
-  Payment          Payment[]
+  id                Int                 @id @default(autoincrement())
+  totalPrice        Decimal
+  orderDate         DateTime            @default(now())
+  statusId          Int
+  paymentMethodId   Int?
+  PaymentMethod     PaymentMethod?      @relation(fields: [paymentMethodId], references: [id])
+  OrderStatus       OrderStatus         @relation(fields: [statusId], references: [id])
+  orderParticipants OrderParticipants[]
+  OrderItem         OrderItem[]
+  Payment           Payment[]
 }
 
-model OrderParticipants  {
+model OrderParticipants {
   orderId Int
   userId  String
   Order   Order  @relation(fields: [orderId], references: [id])
@@ -158,8 +158,10 @@ model Restaurant {
   name        String     @unique
   description String?
   logoUrl     String?
+  owner       User       @relation(fields: [ownerId], references: [id])
   createdAt   DateTime   @default(now())
   updatedAt   DateTime   @default(now()) @updatedAt
+  ownerId     String
   Address     Address[]
   MenuItem    MenuItem[]
 }
@@ -182,24 +184,25 @@ model UserRole {
 }
 
 model User {
-  id               String             @id
-  name             String
-  email            String
-  emailVerified    Boolean
-  image            String?
-  createdAt        DateTime
-  updatedAt        DateTime
-  sessions         Session[]
-  accounts         Account[]
-  Cart             Cart[]
-  CartItem         CartItem[]
-  Group            Group[]
-  GroupMembership  GroupMembership[]
-  orderParticipants  OrderParticipants[]
-  OrderItem        OrderItem[]
-  Payment          Payment[]
-  PaymentMethod    PaymentMethod[]
-  UserRole         UserRole[]
+  id                String              @id
+  name              String
+  email             String
+  emailVerified     Boolean
+  image             String?
+  createdAt         DateTime
+  updatedAt         DateTime
+  sessions          Session[]
+  accounts          Account[]
+  Cart              Cart[]
+  CartItem          CartItem[]
+  Group             Group[]
+  GroupMembership   GroupMembership[]
+  orderParticipants OrderParticipants[]
+  OrderItem         OrderItem[]
+  Payment           Payment[]
+  PaymentMethod     PaymentMethod[]
+  UserRole          UserRole[]
+  Restaurant        Restaurant[]
 
   @@unique([email])
   @@map("user")

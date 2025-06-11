@@ -59,6 +59,7 @@ async function main() {
       name: "le switch",
       description: "French cuisine at its finest",
       logoUrl: "https://example.com/bistro.jpg",
+      owner: "user1",
       address: {
         street: "123 Main St",
         city: "New York",
@@ -73,6 +74,7 @@ async function main() {
       name: "zanzibar",
       description: "Authentic Italian pasta dishes",
       logoUrl: "https://example.com/pasta.jpg",
+      owner: "user2",
       address: {
         street: "456 Elm St",
         city: "Chicago",
@@ -87,6 +89,7 @@ async function main() {
       name: "Sushi World",
       description: "Fresh Japanese sushi",
       logoUrl: "https://example.com/sushi.jpg",
+      owner: "user2",
       address: {
         street: "789 Oak St",
         city: "Los Angeles",
@@ -101,6 +104,7 @@ async function main() {
       name: "Burger Barn",
       description: "Classic American burgers",
       logoUrl: "https://example.com/burger.jpg",
+      owner: "user2",
       address: {
         street: "101 Pine St",
         city: "Austin",
@@ -115,6 +119,7 @@ async function main() {
       name: "Taco Fiesta",
       description: "Mexican street food",
       logoUrl: "https://example.com/taco.jpg",
+      owner: "user2",
       address: {
         street: "202 Maple St",
         city: "Miami",
@@ -133,6 +138,9 @@ async function main() {
         name: restaurantData.name,
         description: restaurantData.description,
         logoUrl: restaurantData.logoUrl,
+        owner: {
+          connect: { id: restaurantData.owner },
+        },
         Address: {
           create: {
             street: restaurantData.address.street,
