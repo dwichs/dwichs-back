@@ -198,16 +198,20 @@ app.post("/orders", async (c) => {
   if (!session) return c.json({ error: "Unauthorized" }, 401);
 
   const user = c.get("user");
+
   const cart = await prisma.cart.findUnique({
     where: { userId: user.id },
     include: { items: { include: { MenuItem: true } } },
   });
+
   if (!cart?.items.length) return c.json({ error: "Cart is empty" }, 400);
 
   const totalPrice = cart.items.reduce(
     (sum, ci) => sum + Number(ci.MenuItem.price),
     0,
   );
+
+  const restaurantIdOfFirstItem = cart.items[0].MenuItem.restaurantId;
 
   const [orderCreated] = await prisma.$transaction([
     prisma.order.create({
@@ -216,6 +220,9 @@ app.post("/orders", async (c) => {
         orderDate: new Date(),
         OrderStatus: { connect: { id: 1 } },
         orderParticipants: { create: { userId: user.id } },
+        Restaurant: {
+          connect: { id: restaurantIdOfFirstItem },
+        },
         OrderItem: {
           create: cart.items.map((ci) => ({
             menuItemId: ci.MenuItem.id,

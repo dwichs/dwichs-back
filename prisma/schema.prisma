@@ -35,16 +35,14 @@ model Cart {
 }
 
 model CartItem {
-  id             Int        @id @default(autoincrement())
+  id             Int      @id @default(autoincrement())
   specialRequest String?
   cartId         Int
   menuItemId     Int
   userId         String
-  restaurantId   Int
-  Restaurant     Restaurant @relation(fields: [restaurantId], references: [id])
-  Cart           Cart       @relation(fields: [cartId], references: [id])
-  MenuItem       MenuItem   @relation(fields: [menuItemId], references: [id])
-  User           User?      @relation(fields: [userId], references: [id])
+  Cart           Cart     @relation(fields: [cartId], references: [id])
+  MenuItem       MenuItem @relation(fields: [menuItemId], references: [id])
+  User           User?    @relation(fields: [userId], references: [id])
 }
 
 model Group {
@@ -168,7 +166,6 @@ model Restaurant {
   ownerId     String
   Address     Address[]
   MenuItem    MenuItem[]
-  CartItem    CartItem[]
   Order       Order[]
 }
 
