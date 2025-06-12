@@ -85,6 +85,38 @@ app.get("/restaurants", async (c) => {
   }
 });
 
+app.get("/owners/restaurants", async (c) => {
+  try {
+    const session = c.get("session");
+
+    if (!session) {
+      return c.json({ error: "Unauthorized" }, 401); // 401 for unauthorized
+    }
+
+    const user = c.get("user");
+    console.log(user);
+
+    const restaurantsOfOwner = await prisma.restaurant.findMany({
+      where: {
+        ownerId: user?.id,
+      },
+    });
+
+    return c.json({
+      success: true,
+      data: restaurantsOfOwner,
+    });
+  } catch (error) {
+    return c.json(
+      {
+        success: false,
+        error: "Failed to fetch restaurants owned by the restaurant owner",
+      },
+      500,
+    );
+  }
+});
+
 app.get("/restaurants/orders", async (c) => {
   try {
     const restaurants = await prisma.restaurant.findMany();
