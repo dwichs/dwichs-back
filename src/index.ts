@@ -26,7 +26,7 @@ const app = new Hono<{
 app.use(
   "/*",
   cors({
-    origin: ["http://localhost:5173"], // Your SvelteKit frontend URL
+    origin: ["http://localhost:5173", "http://localhost:5174"], // Your SvelteKit frontend URL
     allowMethods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allowHeaders: ["Content-Type", "Authorization"],
     credentials: true, // Required for cookies/auth
