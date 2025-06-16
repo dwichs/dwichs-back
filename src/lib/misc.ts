@@ -1,7 +1,8 @@
 import { PrismaClient } from "../../generated/prisma/client.js";
+import type { User } from "../../generated/prisma/client.js";
 const prisma = new PrismaClient();
 
-export const createUserCart = async (user) => {
+export const createUserCart = async (user: User) => {
   await prisma.cart.create({
     data: {
       userId: user.id,
@@ -9,7 +10,7 @@ export const createUserCart = async (user) => {
   });
 };
 
-export const addMenuItemToCart = async (user, menuItemId) => {
+export const addMenuItemToCart = async (user: User, menuItemId: number) => {
   const cartId = await prisma.cart.findUnique({
     where: {
       userId: user.id,
@@ -21,14 +22,17 @@ export const addMenuItemToCart = async (user, menuItemId) => {
 
   await prisma.cartItem.create({
     data: {
-      cartId: cartId.id,
+      cartId: cartId!.id,
       userId: user.id,
       menuItemId: menuItemId,
     },
   });
 };
 
-export const getCartItems = async (user) => {
+export const getCartItems = async (user: {
+  id: string;
+  image?: string | null;
+}) => {
   const cartWithMenuItems = await prisma.cart.findFirst({
     where: {
       userId: user.id, // or groupId if it's a group cart
@@ -48,7 +52,7 @@ export const getCartItems = async (user) => {
   return menuItemsInCart;
 };
 
-export const getUserOrders = async (user) => {
+export const getUserOrders = async (user: User) => {
   const userOrders = await prisma.order.findMany({
     where: {
       orderParticipants: {

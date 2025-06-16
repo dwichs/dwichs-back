@@ -1,6 +1,7 @@
 import { serve } from "@hono/node-server";
 import { Hono } from "hono";
 import { cors } from "hono/cors";
+import type { User } from "../generated/prisma/client.js";
 
 import { PrismaClient } from "../generated/prisma/client.js";
 const prisma = new PrismaClient();
@@ -187,14 +188,12 @@ app.get("/restaurants/:id", async (c) => {
       success: true,
       data: menuItems,
     });
-  } catch (error) {
-    return c.json(
-      {
-        success: false,
-        error: `Failed to fetch menuItems: ${error.message}`,
-      },
-      500,
-    );
+  } catch (error: unknown) {
+    if (error instanceof Error) {
+      console.error(`Failed to fetch menuItems: ${error.message}`);
+    } else {
+      console.error("An unexpected error occurred", error);
+    }
   }
 });
 
@@ -205,6 +204,8 @@ app.get("/cart/items", async (c) => {
   }
 
   const user = c.get("user");
+
+  if (!user) throw new Error("User is required");
 
   const menuItems = await getCartItems(user);
 
@@ -221,6 +222,12 @@ app.post("/cart", async (c) => {
   }
 
   const user = c.get("user");
+  if (!user) return c.json({ error: "Unauthorized" }, 401);
+
+  const normalizedUser = {
+    ...user,
+    image: user!.image ?? null,
+  };
 
   try {
     const body = await c.req.json();
@@ -228,7 +235,7 @@ app.post("/cart", async (c) => {
       return c.json({ error: "menuItemId is required" }, 400);
     }
 
-    await addMenuItemToCart(user, body.menuItemId); // Make sure this is awaited!
+    await addMenuItemToCart(normalizedUser, body.menuItemId); // Make sure this is awaited!
 
     return c.json({ message: "Menu item added to cart" }, 201);
   } catch (err) {
@@ -254,8 +261,14 @@ app.get("/orders", async (c) => {
   }
 
   const user = c.get("user");
+  if (!user) return c.json({ error: "Unauthorized" }, 401);
 
-  const userOrders = await getUserOrders(user);
+  const normalizedUser = {
+    ...user,
+    image: user.image ?? null,
+  };
+
+  const userOrders = await getUserOrders(normalizedUser);
 
   return c.json({
     success: true,
@@ -270,7 +283,7 @@ app.post("/orders", async (c) => {
   const user = c.get("user");
 
   const cart = await prisma.cart.findUnique({
-    where: { userId: user.id },
+    where: { userId: user!.id },
     include: { items: { include: { MenuItem: true } } },
   });
 
@@ -289,7 +302,7 @@ app.post("/orders", async (c) => {
         totalPrice,
         orderDate: new Date(),
         OrderStatus: { connect: { id: 1 } },
-        orderParticipants: { create: { userId: user.id } },
+        orderParticipants: { create: { userId: user!.id } },
         Restaurant: {
           connect: { id: restaurantIdOfFirstItem },
         },
