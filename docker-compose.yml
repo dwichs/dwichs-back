@@ -1,4 +1,4 @@
-name: dwichs-postgres
+name: dwichs-back
 services:
   dwichs-postgres:
     image: postgres
