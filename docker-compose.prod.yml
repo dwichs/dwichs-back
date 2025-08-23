@@ -23,23 +23,23 @@ services:
       timeout: 2s
       retries: 20
 
-  dwichs-backend:
-    build:
-      context: .
-      dockerfile: Dockerfile.prod
-    container_name: dwichs-backend
-    hostname: dwichs-backend
-    ports:
-      - "3000:3000"
-    stdin_open: true
-    tty: true # Keeps the container running for debugging
-    depends_on:
-      dwichs-database:
-        condition: service_healthy
-    env_file:
-      - .env
-    networks:
-      - dwichs
+  # dwichs-backend:
+  #   build:
+  #     context: .
+  #     dockerfile: Dockerfile.prod
+  #   container_name: dwichs-backend
+  #   hostname: dwichs-backend
+  #   ports:
+  #     - "3000:3000"
+  #   stdin_open: true
+  #   tty: true # Keeps the container running for debugging
+  #   depends_on:
+  #     dwichs-database:
+  #       condition: service_healthy
+  #   env_file:
+  #     - .env
+  #   networks:
+  #     - dwichs
 
   # prisma-studio:
   #   image: node:lts-alpine3.17
