@@ -2,6 +2,7 @@ name: dwichs-back
 services:
   dwichs-database:
     image: postgres
+    hostname: dwichs-database
     container_name: dwichs-database
     restart: unless-stopped
     shm_size: 128mb
@@ -26,7 +27,8 @@ services:
     build:
       context: .
       dockerfile: Dockerfile.prod
-    container_name: dwichs-hono
+    container_name: dwichs-backend
+    hostname: dwichs-backend
     ports:
       - "3000:3000"
     stdin_open: true
@@ -35,7 +37,7 @@ services:
       dwichs-database:
         condition: service_healthy
     env_file:
-      - .env.production
+      - .env
     networks:
       - dwichs
 
