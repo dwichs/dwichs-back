@@ -6,8 +6,8 @@ services:
       dockerfile: Dockerfile.production
     container_name: dwichs-backend
     hostname: dwichs-backend
-    ports:
-      - "3001:3001"
+    expose:
+      - 3001
     stdin_open: true
     tty: true # Keeps the container running for debugging
     depends_on:
@@ -16,7 +16,12 @@ services:
     env_file:
       - .env
     networks:
-      - dwichs
+      - dokploy-network
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.frontend-app.rule=Host(`api.karitchi.com`)
+      - traefik.http.routers.backend.entrypoints=web
+      - traefik.http.services.frontend-app.loadbalancer.server.port=3000
 
   dwichs-database:
     image: postgres
@@ -34,36 +39,36 @@ services:
     volumes:
       - dwichs-postgres:/var/lib/postgresql/data
     networks:
-      - dwichs
+      - dokploy-network
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U postgres -d postgres"]
       interval: 5s
       timeout: 2s
       retries: 20
 
-  prisma-studio:
-    image: node:lts-alpine3.17
-    container_name: dwichs-prisma-studio
-    working_dir: /usr/src/app
-    volumes:
-      - .:/usr/src/app
-    command: npx prisma studio --port 5555 --browser none
-    ports:
-      - "5555:5555"
-    env_file:
-      - .env
-    # networks:
-    #   - prisma-network
-    depends_on:
-      dwichs-database:
-        condition: service_healthy
-      dwichs-backend:
-        condition: service_started
+  # prisma-studio:
+  #   image: node:lts-alpine3.17
+  #   container_name: dwichs-prisma-studio
+  #   working_dir: /usr/src/app
+  #   volumes:
+  #     - .:/usr/src/app
+  #   command: npx prisma studio --port 5555 --browser none
+  #   ports:
+  #     - "5555:5555"
+  #   env_file:
+  #     - .env
+  # networks:
+  #   - prisma-network
+  # depends_on:
+  #   dwichs-database:
+  #     condition: service_healthy
+  #   dwichs-backend:
+  #     condition: service_started
 
 volumes:
   dwichs-postgres:
     name: "dwichs-postgres"
 
 networks:
-  dwichs:
-    name: dwichs
+  dokploy-network:
+    external: true
