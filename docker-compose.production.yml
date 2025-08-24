@@ -19,9 +19,9 @@ services:
       - dokploy-network
     labels:
       - traefik.enable=true
-      - traefik.http.routers.frontend-app.rule=Host(`api.karitchi.com`)
+      - traefik.http.routers.backend.rule=Host(`api.karitchi.com`)
       - traefik.http.routers.backend.entrypoints=web
-      - traefik.http.services.frontend-app.loadbalancer.server.port=3000
+      - traefik.http.services.backend.loadbalancer.server.port=3001
 
   dwichs-database:
     image: postgres
