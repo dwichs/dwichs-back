@@ -1,0 +1,69 @@
+name: dwichs-backend
+services:
+  dwichs-backend:
+    build:
+      context: .
+      dockerfile: Dockerfile.production
+    container_name: dwichs-backend
+    hostname: dwichs-backend
+    ports:
+      - "3000:3000"
+    stdin_open: true
+    tty: true # Keeps the container running for debugging
+    depends_on:
+      dwichs-database:
+        condition: service_healthy
+    env_file:
+      - .env
+    networks:
+      - dwichs
+
+  dwichs-database:
+    image: postgres
+    hostname: dwichs-database
+    container_name: dwichs-database
+    restart: unless-stopped
+    shm_size: 128mb
+    environment:
+      POSTGRES_PASSWORD: admin
+      POSTGRES_USER: admin
+      POSTGRES_DB: dwichs
+      POSTGRES_HOST_AUTH_METHOD: scram-sha-256
+    ports:
+      - 5432:5432
+    volumes:
+      - dwichs-postgres:/var/lib/postgresql/data
+    networks:
+      - dwichs
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d postgres"]
+      interval: 5s
+      timeout: 2s
+      retries: 20
+
+  prisma-studio:
+    image: node:lts-alpine3.17
+    container_name: dwichs-prisma-studio
+    working_dir: /usr/src/app
+    volumes:
+      - .:/usr/src/app
+    command: npx prisma studio --port 5555 --browser none
+    ports:
+      - "5555:5555"
+    env_file:
+      - .env.prod
+    # networks:
+    #   - prisma-network
+    depends_on:
+      dwichs-postgres:
+        condition: service_healthy
+      dwichs-hono:
+        condition: service_started
+
+volumes:
+  dwichs-postgres:
+    name: "dwichs-postgres"
+
+networks:
+  dwichs:
+    name: dwichs

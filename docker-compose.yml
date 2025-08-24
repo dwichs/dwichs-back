@@ -1,8 +1,9 @@
 name: dwichs-back
 services:
-  dwichs-postgres:
+  dwichs-database:
     image: postgres
-    container_name: dwichs-postgres
+    container_name: dwichs-database
+    hostname: dwichs-database
     restart: unless-stopped
     shm_size: 128mb
     environment:
@@ -13,26 +14,26 @@ services:
     ports:
       - 5432:5432
     volumes:
-      - dwichs-postgres:/var/lib/postgresql/data
+      - dwichs-database:/var/lib/postgresql/data
 
-  dwichs-adminer:
-    image: adminer
-    container_name: dwichs-adminer
-    restart: unless-stopped
-    ports:
-      - 8080:8080
-
-  dwichs-pgadmin:
-    image: dpage/pgadmin4
-    container_name: dwichs-pgadmin
-    ports:
-      - 80:80
-    environment:
-      - PGADMIN_DEFAULT_EMAIL=karichikarichikarichi@gmail.com
-      - PGADMIN_DEFAULT_PASSWORD=admin
-    volumes:
-      - ~/docker/container/pgadmin:/var/lib/pgadmin
+  # dwichs-adminer:
+  #   image: adminer
+  #   container_name: dwichs-adminer
+  #   restart: unless-stopped
+  #   ports:
+  #     - 8080:8080
+  #
+  # dwichs-pgadmin:
+  #   image: dpage/pgadmin4
+  #   container_name: dwichs-pgadmin
+  #   ports:
+  #     - 80:80
+  #   environment:
+  #     - PGADMIN_DEFAULT_EMAIL=karichikarichikarichi@gmail.com
+  #     - PGADMIN_DEFAULT_PASSWORD=admin
+  #   volumes:
+  #     - ~/docker/container/pgadmin:/var/lib/pgadmin
 
 volumes:
-  dwichs-postgres:
-    name: "dwichs-postgres"
+  dwichs-database:
+    name: "dwichs-database"
