@@ -55,9 +55,9 @@ services:
     # networks:
     #   - prisma-network
     depends_on:
-      dwichs-postgres:
+      dwichs-database:
         condition: service_healthy
-      dwichs-hono:
+      dwichs-backend:
         condition: service_started
 
 volumes:
