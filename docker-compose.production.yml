@@ -1,35 +1,21 @@
-name: dwichs-backend
 services:
-  dwichs-backend:
-    build:
-      context: .
-      dockerfile: Dockerfile.production
-    container_name: dwichs-backend
+  backend:
+    image: dwichs-backend:latest
     hostname: dwichs-backend
-    expose:
-      - 3001
+    ports:
+      - "3001:3001"
     stdin_open: true
     tty: true # Keeps the container running for debugging
     depends_on:
-      dwichs-database:
-        condition: service_healthy
+      - database
     env_file:
-      - .env
+      - .env.production
     networks:
-      - dokploy-network
-    labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.backend.rule=Host(`api.karitchi.com`)"
-      - "traefik.http.routers.backend.entrypoints=websecure"
-      - "traefik.http.routers.backend.tls.certResolver=letsencrypt"
-      - "traefik.http.services.backend.loadbalancer.server.port=3001"
+      - dwichs
 
-  dwichs-database:
+  database:
     image: postgres
     hostname: dwichs-database
-    container_name: dwichs-database
-    restart: unless-stopped
-    shm_size: 128mb
     environment:
       POSTGRES_PASSWORD: admin
       POSTGRES_USER: admin
@@ -40,7 +26,7 @@ services:
     volumes:
       - dwichs-postgres:/var/lib/postgresql/data
     networks:
-      - dokploy-network
+      - dwichs
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U postgres -d postgres"]
       interval: 5s
@@ -71,5 +57,7 @@ volumes:
     name: "dwichs-postgres"
 
 networks:
-  dokploy-network:
-    external: true
+  dwichs:
+    name: dwichs
+    driver: overlay
+    attachable: true
