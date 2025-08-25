@@ -18,10 +18,11 @@ services:
     networks:
       - dokploy-network
     labels:
-      - traefik.enable=true
-      - traefik.http.routers.backend.rule=Host(`api.karitchi.com`)
-      - traefik.http.routers.backend.entrypoints=web
-      - traefik.http.services.backend.loadbalancer.server.port=3001
+      - "traefik.enable=true"
+      - "traefik.http.routers.backend.rule=Host(`api.karitchi.com`)"
+      - "traefik.http.routers.backend.entrypoints=websecure"
+      - "traefik.http.routers.backend.tls.certResolver=letsencrypt"
+      - "traefik.http.services.backend.loadbalancer.server.port=3001"
 
   dwichs-database:
     image: postgres
