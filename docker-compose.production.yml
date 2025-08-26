@@ -15,19 +15,19 @@ services:
     networks:
       - dwichs
 
-  backend:
-    image: dwichs-backend:latest
-    hostname: dwichs-backend
-    ports:
-      - "3000:3000"
-    stdin_open: true
-    tty: true # Keeps the container running for debugging
-    depends_on:
-      - database
-    env_file:
-      - .env.production
-    networks:
-      - dwichs
+  # backend:
+  #   image: dwichs-backend:latest
+  #   hostname: dwichs-backend
+  #   ports:
+  #     - "3000:3000"
+  #   stdin_open: true
+  #   tty: true # Keeps the container running for debugging
+  #   depends_on:
+  #     - database
+  #   env_file:
+  #     - .env.production
+  #   networks:
+  #     - dwichs
 
   database:
     image: postgres
