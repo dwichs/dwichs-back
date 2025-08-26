@@ -44,3 +44,20 @@ jobs:
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
+
+  deploy-swarm:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Deploy to Docker Swarm
+        uses: wshihadeh/docker-deployment-action@v1
+        with:
+          remote_docker_host: github-action@188.245.46.180
+          ssh_private_key: ${{ secrets.SSH_PRIVATE_KEY }}
+          ssh_public_key: ${{ secrets.SSH_PUBLIC_KEY }} # known_hosts entry
+          deployment_mode: docker-swarm
+          stack_file_name: docker-compose.production.yml
+          keep_files: 5
+          args: dwichs # your stack name
