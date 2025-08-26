@@ -1,9 +1,24 @@
 services:
+  reverse-proxy:
+    image: caddy:latest
+    hostname: dwichs-reverse-proxy
+    cap_add:
+      - NET_ADMIN
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp" # http/3
+    volumes:
+      - /docker/container/caddy/data:/data # TLS certificates and other important assets
+      - /docker/container/caddy/config:/config # Caddy may store certain configuration to disk
+    networks:
+      - dwichs
+
   backend:
     image: dwichs-backend:latest
     hostname: dwichs-backend
     ports:
-      - "3001:3001"
+      - "3000:3000"
     stdin_open: true
     tty: true # Keeps the container running for debugging
     depends_on:
@@ -24,7 +39,7 @@ services:
     ports:
       - 5432:5432
     volumes:
-      - dwichs-postgres:/var/lib/postgresql/data
+      - /docker/container/database/data:/var/lib/postgresql/data
     networks:
       - dwichs
     healthcheck:
@@ -32,29 +47,6 @@ services:
       interval: 5s
       timeout: 2s
       retries: 20
-
-  # prisma-studio:
-  #   image: node:lts-alpine3.17
-  #   container_name: dwichs-prisma-studio
-  #   working_dir: /usr/src/app
-  #   volumes:
-  #     - .:/usr/src/app
-  #   command: npx prisma studio --port 5555 --browser none
-  #   ports:
-  #     - "5555:5555"
-  #   env_file:
-  #     - .env
-  # networks:
-  #   - prisma-network
-  # depends_on:
-  #   dwichs-database:
-  #     condition: service_healthy
-  #   dwichs-backend:
-  #     condition: service_started
-
-volumes:
-  dwichs-postgres:
-    name: "dwichs-postgres"
 
 networks:
   dwichs:

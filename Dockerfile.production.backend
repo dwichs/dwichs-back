@@ -28,7 +28,7 @@ COPY --from=builder --chown=hono:nodejs /app/prisma /app/prisma
 COPY --from=builder --chown=hono:nodejs /app/generated /app/generated
 
 USER hono
-EXPOSE 3001
+EXPOSE 3000
 
 # Only run migrations, not generate
 CMD ["sh", "-c", "npx prisma migrate deploy && node /app/dist/index.js"]
