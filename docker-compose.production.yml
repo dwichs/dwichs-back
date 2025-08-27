@@ -1,7 +1,7 @@
 version: "3.8"
 services:
   reverse-proxy:
-    image: ghcr.io/dwichs-back/reverse-proxy:main
+    image: ghcr.io/dwichs/dwichs-back/reverse-proxy:main
     hostname: dwichs-reverse-proxy
     cap_add:
       - NET_ADMIN
@@ -16,7 +16,7 @@ services:
       - dwichs
 
   api:
-    image: ghcr.io/dwichs-back/api:main
+    image: ghcr.io/dwichs/dwichs-back/api:main
     hostname: dwichs-api
     expose:
       - 3000
