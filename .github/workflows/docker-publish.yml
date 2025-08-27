@@ -51,6 +51,9 @@ jobs:
     steps:
       - uses: actions/checkout@v3
 
+      - name: Add server to known_hosts
+        run: ssh-keyscan 188.245.46.180 >> ~/.ssh/known_hosts
+
       - name: Login to GHCR on Swarm node
         run: |
           ssh github-action@188.245.46.180 "docker login ghcr.io -u ${{ github.actor }} -p ${{ secrets.GHCR_GITHUB_TOKEN }}"
