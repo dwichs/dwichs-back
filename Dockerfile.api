@@ -8,7 +8,10 @@ RUN npm install
 
 COPY ./src /app/src
 COPY ./prisma /app/prisma
+COPY ./.env /app/.env
 
 RUN npx prisma generate
+
+EXPOSE 3000
 
 CMD npm run dev

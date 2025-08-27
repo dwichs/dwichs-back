@@ -11,6 +11,8 @@ services:
       POSTGRES_USER: admin
       POSTGRES_DB: dwichs
       POSTGRES_HOST_AUTH_METHOD: scram-sha-256
+    networks:
+      - dwichs
     volumes:
       - dwichs-database:/var/lib/postgresql/data
 
@@ -24,6 +26,8 @@ services:
     command: npm run dev
     ports:
       - 3000:3000
+    networks:
+      - dwichs
     develop:
       watch:
         - action: sync
@@ -36,6 +40,10 @@ services:
 
         - action: rebuild
           path: package.json
+          target: /app
+
+        - action: rebuild
+          path: .env
           target: /app
 
   # dwichs-adminer:
@@ -59,3 +67,6 @@ services:
 volumes:
   dwichs-database:
     name: "dwichs-database"
+
+networks:
+  dwichs:

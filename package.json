@@ -2,7 +2,7 @@
   "name": "dwichs-back",
   "type": "module",
   "scripts": {
-    "dev": "tsx watch src/index.ts",
+    "dev": "tsx watch /app/src/index.ts",
     "build": "tsc",
     "start": "node dist/index.js"
   },
