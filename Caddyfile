@@ -1,3 +1,3 @@
-api.dwichs.karitchi.com {
+api.karitchi.com {
     reverse_proxy dwichs-api:3000
 }
