@@ -34,4 +34,4 @@ jobs:
           ls -al
           docker context create dwichs-hetzner --docker "host=ssh://github-action@188.245.46.180"
           docker context use dwichs-hetzner
-          docker compose -f docker-compose.yml config | docker stack deploy --compose-file - dwichs
+          docker compose -f docker-compose.production.yml config| docker stack deploy --compose-file - dwichs
