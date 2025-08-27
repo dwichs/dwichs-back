@@ -33,10 +33,12 @@ jobs:
           echo "API_KEY=${{ secrets.API_KEY }}" >> .env
           echo "JWT_SECRET=${{ secrets.JWT_SECRET }}" >> .env
           echo "NODE_ENV=production" >> .env
+          pwd
 
       - name: Get the code from github
         uses: actions/checkout@v4
 
       - name: Deploy to Docker Swarm
         run: |
+          pwd
           docker stack deploy -c docker-compose.production.yml dwichs --with-registry-auth
