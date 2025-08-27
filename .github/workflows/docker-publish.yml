@@ -6,32 +6,40 @@ on:
       - main
 
 jobs:
-  deploy-swarm:
+  build:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    strategy:
+      matrix:
+        include:
+          - image: ghcr.io/dwichs/${{ github.repository }}/reverse-proxy
+            dockerfile: Dockerfile.production.reverse-proxy
+          - image: ghcr.io/dwichs/${{ github.repository }}/api
+            dockerfile: Dockerfile.production.api
     steps:
-      - uses: actions/checkout@v3
-
-      - name: Setup SSH key
-        run: |
-          mkdir ~/.ssh
-          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
-          chmod 600 ~/.ssh/id_rsa
-          ssh-keyscan 188.245.46.180 >> ~/.ssh/known_hosts
-
-      - name: Get the code from github
+      - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Deploy to Docker Swarm
-        run: |
-          docker login ghcr.io -u ${{ github.actor }} -p ${{ secrets.GHCR_GITHUB_TOKEN }}
-          echo "DB_HOST=${{ secrets.DB_HOST }}" >> .env
-          echo "DB_USER=${{ secrets.DB_USER }}" >> .env
-          echo "DB_PASSWORD=${{ secrets.DB_PASSWORD }}" >> .env
-          echo "API_KEY=${{ secrets.API_KEY }}" >> .env
-          echo "JWT_SECRET=${{ secrets.JWT_SECRET }}" >> .env
-          echo "NODE_ENV=production" >> .env
-          pwd
-          ls -al
-          docker context create dwichs-hetzner --docker "host=ssh://github-action@188.245.46.180"
-          docker context use dwichs-hetzner
-          docker compose -f docker-compose.production.yml config| docker stack deploy --compose-file - dwichs
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v2
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract metadata (tags, labels) for Docker
+        id: meta
+        uses: docker/metadata-action@v4
+        with:
+          images: ${{ matrix.image }}
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v4
+        with:
+          context: .
+          file: ${{ matrix.dockerfile }}
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
