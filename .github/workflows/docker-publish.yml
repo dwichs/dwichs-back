@@ -6,44 +6,44 @@ on:
       - main
 
 jobs:
-  # build:
-  #   runs-on: ubuntu-latest
-  #   permissions:
-  #     contents: read
-  #     packages: write
-  #   strategy:
-  #     matrix:
-  #       include:
-  #         - image: ghcr.io/${{ github.repository }}/reverse-proxy
-  #           dockerfile: Dockerfile.production.reverse-proxy
-  #         - image: ghcr.io/${{ github.repository }}/api
-  #           dockerfile: Dockerfile.production.api
-  #
-  #   steps:
-  #     - name: Checkout code
-  #       uses: actions/checkout@v4
-  #
-  #     - name: Log in to GitHub Container Registry
-  #       uses: docker/login-action@v2
-  #       with:
-  #         registry: ghcr.io
-  #         username: ${{ github.actor }}
-  #         password: ${{ secrets.GITHUB_TOKEN }}
-  #
-  #     - name: Extract metadata (tags, labels) for Docker
-  #       id: meta
-  #       uses: docker/metadata-action@v4
-  #       with:
-  #         images: ${{ matrix.image }}
-  #
-  #     - name: Build and push Docker image
-  #       uses: docker/build-push-action@v4
-  #       with:
-  #         context: .
-  #         file: ${{ matrix.dockerfile }}
-  #         push: true
-  #         tags: ${{ steps.meta.outputs.tags }}
-  #         labels: ${{ steps.meta.outputs.labels }}
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    strategy:
+      matrix:
+        include:
+          - image: ghcr.io/${{ github.repository }}/reverse-proxy
+            dockerfile: Dockerfile.production.reverse-proxy
+          - image: ghcr.io/${{ github.repository }}/api
+            dockerfile: Dockerfile.production.api
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v2
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract metadata (tags, labels) for Docker
+        id: meta
+        uses: docker/metadata-action@v4
+        with:
+          images: ${{ matrix.image }}
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v4
+        with:
+          context: .
+          file: ${{ matrix.dockerfile }}
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
 
   deploy-swarm:
     needs: build
@@ -51,14 +51,21 @@ jobs:
     steps:
       - uses: actions/checkout@v3
 
-      - name: Add SSH key
+      - name: Setup SSH key
         run: |
-          mkdir -p ~/.ssh
+          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+
+      - name: Add Swarm node to known hosts
+        run: |
           ssh-keyscan 188.245.46.180 >> ~/.ssh/known_hosts
 
       - name: Login to GHCR on Swarm node
         run: |
-          ssh github-action@188.245.46.180 "docker login ghcr.io -u ${{ github.actor }} -p ${{ secrets.GHCR_GITHUB_TOKEN }}"
+          ssh -i ~/.ssh/id_rsa github-action@188.245.46.180 \
+            "docker login ghcr.io -u ${{ github.actor }} -p ${{ secrets.GHCR_GITHUB_TOKEN }}"
+        env:
+          GHCR_GITHUB_TOKEN: ${{ secrets.GHCR_GITHUB_TOKEN }}
 
       - name: Create .env file
         run: |
