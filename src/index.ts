@@ -3,18 +3,17 @@ import { Hono } from "hono";
 import { cors } from "hono/cors";
 import type { User } from "../generated/prisma/client.js";
 
+import restaurants from "./routes/restaurants";
+import orders from "./routes/orders";
+import cart from "./routes/cart";
+
 import { PrismaClient } from "../generated/prisma/client.js";
 const prisma = new PrismaClient();
 
 import { auth } from "./lib/auth.js";
 import type { AuthType } from "./lib/auth.js";
 
-import {
-  createUserCart,
-  addMenuItemToCart,
-  getCartItems,
-  getUserOrders,
-} from "./lib/misc.js";
+import { createUserCart, getUserOrders } from "./lib/misc.js";
 
 const app = new Hono<{
   Bindings: AuthType;
@@ -55,6 +54,10 @@ app.use("*", async (c, next) => {
   return next();
 });
 
+app.route("/restaurants", restaurants);
+app.route("/orders", orders);
+app.route("/cart", cart);
+
 app.use("/api/auth/sign-up/*", async (c, next) => {
   await next();
 
@@ -73,24 +76,6 @@ app.on(["POST", "GET"], "/api/auth/*", (c) => {
 
 app.get("/", (c) => {
   return c.text("Hello Hono!");
-});
-
-app.get("/restaurants", async (c) => {
-  try {
-    const restaurants = await prisma.restaurant.findMany();
-    return c.json({
-      success: true,
-      data: restaurants,
-    });
-  } catch (error) {
-    return c.json(
-      {
-        success: false,
-        error: "Failed to fetch restaurants",
-      },
-      500,
-    );
-  }
 });
 
 app.get("/owners/restaurants", async (c) => {
@@ -123,225 +108,6 @@ app.get("/owners/restaurants", async (c) => {
       500,
     );
   }
-});
-
-app.get("/restaurants/:id/orders", async (c) => {
-  try {
-    const session = c.get("session");
-
-    if (!session) {
-      return c.json({ error: "Unauthorized" }, 401); // 401 for unauthorized
-    }
-
-    const user = c.get("user");
-
-    const id = Number(c.req.param("id"));
-
-    const orders = await prisma.order.findMany({
-      where: { restaurantId: id },
-      include: {
-        OrderItem: true, // include all items for each order
-        OrderStatus: true, // optional, include status info
-      },
-      orderBy: {
-        orderDate: "desc",
-      },
-    });
-
-    return c.json({
-      success: true,
-      data: orders,
-    });
-  } catch (error) {
-    return c.json(
-      {
-        success: false,
-        error: "Failed to fetch restaurants owned by the restaurant owner",
-      },
-      500,
-    );
-  }
-});
-
-app.get("/restaurants/orders", async (c) => {
-  try {
-    const restaurants = await prisma.restaurant.findMany();
-    return c.json({
-      success: true,
-      data: restaurants,
-    });
-  } catch (error) {
-    return c.json(
-      {
-        success: false,
-        error: "Failed to fetch restaurants",
-      },
-      500,
-    );
-  }
-});
-
-app.get("/restaurants/:id", async (c) => {
-  try {
-    const id = Number(c.req.param("id"));
-
-    const menuItems = await prisma.menuItem.findMany({
-      where: {
-        restaurantId: id,
-      },
-    });
-
-    return c.json({
-      success: true,
-      data: menuItems,
-    });
-  } catch (error: unknown) {
-    if (error instanceof Error) {
-      console.error(`Failed to fetch menuItems: ${error.message}`);
-    } else {
-      console.error("An unexpected error occurred", error);
-    }
-  }
-});
-
-app.get("/cart/items", async (c) => {
-  const session = c.get("session");
-  if (!session) {
-    return c.json({ error: "Unauthorized" }, 401); // 401 for unauthorized
-  }
-
-  const user = c.get("user");
-
-  if (!user) throw new Error("User is required");
-
-  const menuItems = await getCartItems(user);
-
-  return c.json({
-    success: true,
-    data: menuItems,
-  });
-});
-
-app.post("/cart", async (c) => {
-  const session = c.get("session");
-  if (!session) {
-    return c.json({ error: "Unauthorized" }, 401); // 401 for unauthorized
-  }
-
-  const user = c.get("user");
-  if (!user) return c.json({ error: "Unauthorized" }, 401);
-
-  const normalizedUser = {
-    ...user,
-    image: user!.image ?? null,
-  };
-
-  try {
-    const body = await c.req.json();
-    if (!body.menuItemId) {
-      return c.json({ error: "menuItemId is required" }, 400);
-    }
-
-    await addMenuItemToCart(normalizedUser, body.menuItemId); // Make sure this is awaited!
-
-    return c.json({ message: "Menu item added to cart" }, 201);
-  } catch (err) {
-    console.error("Cart error:", err);
-
-    // let status;
-    //
-    // // Differentiate between client and server errors
-    // if (err instanceof prisma.PrismaClientKnownRequestError) {
-    //   // Handle Prisma-specific errors (400 Bad Request)
-    //   return c.json({ error: "Database error", details: err.message }, 400);
-    // } else {
-    //   // Generic server error (500)
-    //
-    return c.json({ error: "Failed to update cart" }, 500);
-  }
-});
-
-app.get("/orders", async (c) => {
-  const session = c.get("session");
-  if (!session) {
-    return c.json({ error: "Unauthorized" }, 401); // 401 for unauthorized
-  }
-
-  const user = c.get("user");
-  if (!user) return c.json({ error: "Unauthorized" }, 401);
-
-  const normalizedUser = {
-    ...user,
-    image: user.image ?? null,
-  };
-
-  const userOrders = await getUserOrders(normalizedUser);
-
-  return c.json({
-    success: true,
-    data: userOrders,
-  });
-});
-
-app.post("/orders", async (c) => {
-  const session = c.get("session");
-  if (!session) return c.json({ error: "Unauthorized" }, 401);
-
-  const user = c.get("user");
-
-  const cart = await prisma.cart.findUnique({
-    where: { userId: user!.id },
-    include: { items: { include: { MenuItem: true } } },
-  });
-
-  if (!cart?.items.length) return c.json({ error: "Cart is empty" }, 400);
-
-  const totalPrice = cart.items.reduce(
-    (sum, ci) => sum + Number(ci.MenuItem.price),
-    0,
-  );
-
-  const restaurantIdOfFirstItem = cart.items[0].MenuItem.restaurantId;
-
-  const [orderCreated] = await prisma.$transaction([
-    prisma.order.create({
-      data: {
-        totalPrice,
-        orderDate: new Date(),
-        OrderStatus: { connect: { id: 1 } },
-        orderParticipants: { create: { userId: user!.id } },
-        Restaurant: {
-          connect: { id: restaurantIdOfFirstItem },
-        },
-        OrderItem: {
-          create: cart.items.map((ci) => ({
-            menuItemId: ci.MenuItem.id,
-            nameAtOrder: ci.MenuItem.name,
-            priceAtOrder: ci.MenuItem.price,
-            imageUrlAtOrder: ci.MenuItem.imageUrl,
-            descriptionAtOrder: ci.MenuItem.description,
-            specialRequest: ci.specialRequest,
-          })),
-        },
-      },
-      include: {
-        OrderStatus: true,
-        orderParticipants: true,
-        OrderItem: true,
-      },
-    }),
-    prisma.cartItem.deleteMany({
-      where: { cartId: cart.id },
-    }),
-  ]);
-
-  return c.json(
-    {
-      message: "Order placed and cart cleared.",
-      order: orderCreated,
-    },
-    201,
-  );
 });
 
 serve(
