@@ -25,7 +25,10 @@ jobs:
         env:
           GHCR_GITHUB_TOKEN: ${{ secrets.GHCR_GITHUB_TOKEN }}
 
-      - name: Create .env file
+      - name: Get the code from github
+        uses: actions/checkout@v4
+
+      - name: Deploy to Docker Swarm
         run: |
           echo "DB_HOST=${{ secrets.DB_HOST }}" >> .env
           echo "DB_USER=${{ secrets.DB_USER }}" >> .env
@@ -33,13 +36,6 @@ jobs:
           echo "API_KEY=${{ secrets.API_KEY }}" >> .env
           echo "JWT_SECRET=${{ secrets.JWT_SECRET }}" >> .env
           echo "NODE_ENV=production" >> .env
-          pwd
-
-      - name: Get the code from github
-        uses: actions/checkout@v4
-
-      - name: Deploy to Docker Swarm
-        run: |
           pwd
           ls -al
           docker context create dwichs-hetzner --docker "host=ssh://github-action@188.245.46.180"
