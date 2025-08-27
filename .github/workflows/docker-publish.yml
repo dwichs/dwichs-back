@@ -41,4 +41,5 @@ jobs:
       - name: Deploy to Docker Swarm
         run: |
           pwd
+          ls -al
           docker stack deploy -c docker-compose.production.yml dwichs --with-registry-auth
