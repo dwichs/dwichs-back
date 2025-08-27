@@ -16,9 +16,6 @@ jobs:
           mkdir ~/.ssh
           echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
           chmod 600 ~/.ssh/id_rsa
-
-      - name: Add Swarm node to known hosts
-        run: |
           ssh-keyscan 188.245.46.180 >> ~/.ssh/known_hosts
 
       - name: Login to GHCR on Swarm node
@@ -37,13 +34,9 @@ jobs:
           echo "JWT_SECRET=${{ secrets.JWT_SECRET }}" >> .env
           echo "NODE_ENV=production" >> .env
 
+      - name: Get the code from github
+        uses: actions/checkout@v4
+
       - name: Deploy to Docker Swarm
-        uses: wshihadeh/docker-deployment-action@v1
-        with:
-          remote_docker_host: github-action@188.245.46.180
-          ssh_private_key: ${{ secrets.SSH_PRIVATE_KEY }}
-          ssh_public_key: ${{ secrets.SSH_PUBLIC_KEY }} # known_hosts entry
-          deployment_mode: docker-swarm
-          stack_file_name: docker-compose.production.yml
-          keep_files: 5
-          args: dwichs # your stack name
+        run: |
+          docker stack deploy -c docker-compose.production.yml dwichs --with-registry-auth
