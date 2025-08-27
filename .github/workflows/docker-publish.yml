@@ -14,9 +14,9 @@ jobs:
     strategy:
       matrix:
         include:
-          - image: reverse-proxy
+          - image: ghcr.io/reverse-proxy
             dockerfile: Dockerfile.production.reverse-proxy
-          - image: api
+          - image: ghcr.io/api
             dockerfile: Dockerfile.production.api
 
     steps:
