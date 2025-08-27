@@ -11,10 +11,32 @@ services:
       POSTGRES_USER: admin
       POSTGRES_DB: dwichs
       POSTGRES_HOST_AUTH_METHOD: scram-sha-256
-    ports:
-      - 5432:5432
     volumes:
       - dwichs-database:/var/lib/postgresql/data
+
+  dwichs-api:
+    build:
+      context: .
+      dockerfile: Dockerfile.api
+    container_name: dwichs-api
+    hostname: dwichs-api
+    restart: unless-stopped
+    command: npm run dev
+    ports:
+      - 3000:3000
+    develop:
+      watch:
+        - action: sync
+          path: ./src
+          target: /app/src
+
+        - action: sync
+          path: ./prisma
+          target: /app/prisma
+
+        - action: rebuild
+          path: package.json
+          target: /app
 
   # dwichs-adminer:
   #   image: adminer
