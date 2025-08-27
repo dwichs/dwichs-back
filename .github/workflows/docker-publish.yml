@@ -16,8 +16,8 @@ jobs:
         include:
           - image: ghcr.io/${{ github.repository }}/reverse-proxy
             dockerfile: Dockerfile.production.reverse-proxy
-          - image: ghcr.io/${{ github.repository }}/backend
-            dockerfile: Dockerfile.production.backend
+          - image: ghcr.io/${{ github.repository }}/api
+            dockerfile: Dockerfile.production.api
 
     steps:
       - name: Checkout code
