@@ -42,4 +42,6 @@ jobs:
         run: |
           pwd
           ls -al
+          docker context create dwichs-hetzner --docker "host=ssh://github-action@188.245.46.180"
+          docker context use dwichs-hetzner
           docker stack deploy -c docker-compose.production.yml dwichs --with-registry-auth
