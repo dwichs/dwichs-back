@@ -46,23 +46,18 @@ services:
           path: .env
           target: /app
 
-  # dwichs-adminer:
-  #   image: adminer
-  #   container_name: dwichs-adminer
-  #   restart: unless-stopped
-  #   ports:
-  #     - 8080:8080
-  #
-  # dwichs-pgadmin:
-  #   image: dpage/pgadmin4
-  #   container_name: dwichs-pgadmin
-  #   ports:
-  #     - 80:80
-  #   environment:
-  #     - PGADMIN_DEFAULT_EMAIL=karichikarichikarichi@gmail.com
-  #     - PGADMIN_DEFAULT_PASSWORD=admin
-  #   volumes:
-  #     - ~/docker/container/pgadmin:/var/lib/pgadmin
+  dwichs-prisma-studio:
+    image: node:22
+    container_name: dwichs-prisma-studio
+    ports:
+      - 5555:5555
+    restart: unless-stopped
+    working_dir: /app
+    command: npx prisma studio --schema=/app/prisma/schema.prisma
+    networks:
+      - dwichs
+    volumes:
+      - ./:/app # Ensures your project files including prisma/ are available
 
 volumes:
   dwichs-database:
