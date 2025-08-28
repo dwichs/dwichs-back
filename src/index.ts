@@ -3,9 +3,9 @@ import { Hono } from "hono";
 import { cors } from "hono/cors";
 import type { User } from "../generated/prisma/client.js";
 
-import restaurants from "./routes/restaurants";
-import orders from "./routes/orders";
-import cart from "./routes/cart";
+import restaurants from "./routes/restaurants.js";
+import orders from "./routes/orders.js";
+import cart from "./routes/cart.js";
 
 import { PrismaClient } from "../generated/prisma/client.js";
 const prisma = new PrismaClient();
