@@ -29,10 +29,8 @@ app.use(
     origin: [
       "http://localhost:5173",
       "http://localhost:5174",
-      "http://dwichs-front-consumer:5173",
-      "http://dwichs-front-merchants:5174",
-      "http://api.dwichs.karitchi.com:80",
-      "https://api.dwichs.karitchi.com:443",
+      "https://dwichs.karitchi.com:443",
+      "https://dwichs-merchants.karitchi.com:443",
     ],
     allowMethods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allowHeaders: ["Content-Type", "Authorization"],
