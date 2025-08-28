@@ -1,6 +1,6 @@
 import { Hono } from "hono";
 
-import { PrismaClient } from "../generated/prisma/client.js";
+import { PrismaClient } from "../../generated/prisma/client.js";
 const prisma = new PrismaClient();
 
 import { getUserOrders } from "../lib/misc.js";

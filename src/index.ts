@@ -87,7 +87,6 @@ app.get("/owners/restaurants", async (c) => {
     }
 
     const user = c.get("user");
-    console.log(user);
 
     const restaurantsOfOwner = await prisma.restaurant.findMany({
       where: {
