@@ -7,7 +7,7 @@ import { getUserOrders } from "../lib/misc.js";
 
 const app = new Hono();
 
-app.get("/orders", async (c) => {
+app.get("/", async (c) => {
   const session = c.get("session");
   if (!session) {
     return c.json({ error: "Unauthorized" }, 401); // 401 for unauthorized
@@ -29,7 +29,7 @@ app.get("/orders", async (c) => {
   });
 });
 
-app.post("/orders", async (c) => {
+app.post("/", async (c) => {
   const session = c.get("session");
   if (!session) return c.json({ error: "Unauthorized" }, 401);
 

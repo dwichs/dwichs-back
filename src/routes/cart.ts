@@ -4,7 +4,7 @@ import { addMenuItemToCart, getCartItems } from "../lib/misc.js";
 
 const app = new Hono();
 
-app.get("/cart/items", async (c) => {
+app.get("/items", async (c) => {
   const session = c.get("session");
   if (!session) {
     return c.json({ error: "Unauthorized" }, 401); // 401 for unauthorized
@@ -22,7 +22,7 @@ app.get("/cart/items", async (c) => {
   });
 });
 
-app.post("/cart", async (c) => {
+app.post("", async (c) => {
   const session = c.get("session");
   if (!session) {
     return c.json({ error: "Unauthorized" }, 401); // 401 for unauthorized

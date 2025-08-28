@@ -46,11 +46,13 @@ app.use("*", async (c, next) => {
   if (!session) {
     c.set("user", null);
     c.set("session", null);
+    console.log(session);
     return next();
   }
 
   c.set("user", session.user);
   c.set("session", session.session);
+
   return next();
 });
 
