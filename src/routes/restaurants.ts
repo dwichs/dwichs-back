@@ -4,6 +4,7 @@ const prisma = new PrismaClient();
 
 const app = new Hono();
 
+// get restaurants
 app.get("/", async (c) => {
   try {
     const restaurants = await prisma.restaurant.findMany();
@@ -22,6 +23,7 @@ app.get("/", async (c) => {
   }
 });
 
+// return orders of a specific restaurant
 app.get("/:id/orders", async (c) => {
   try {
     const session = c.get("session");
@@ -60,6 +62,7 @@ app.get("/:id/orders", async (c) => {
   }
 });
 
+// also get restaurants ?
 app.get("/orders", async (c) => {
   try {
     const restaurants = await prisma.restaurant.findMany();
@@ -78,6 +81,7 @@ app.get("/orders", async (c) => {
   }
 });
 
+// get the menu items of specific a restaurant
 app.get("/:id", async (c) => {
   try {
     const id = Number(c.req.param("id"));
