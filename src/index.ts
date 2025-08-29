@@ -30,7 +30,7 @@ app.use(
       "http://localhost:5173",
       "http://localhost:5174",
       "https://dwichs.karitchi.com",
-      "https://dwichs-merchants.karitchi.com",
+      "https://merchants.karitchi.com",
     ],
     allowMethods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allowHeaders: ["Content-Type", "Authorization"],
