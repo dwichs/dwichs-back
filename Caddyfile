@@ -5,3 +5,7 @@ api.karitchi.com {
 dwichs.karitchi.com {
     reverse_proxy dwichs-front-consumer:5173
 }
+
+merchants.karitchi.com {
+    reverse_proxy dwichs-front-merchants:5174
+}
