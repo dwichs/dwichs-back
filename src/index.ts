@@ -1,7 +1,6 @@
 import { serve } from "@hono/node-server";
 import { Hono } from "hono";
 import { cors } from "hono/cors";
-import type { User } from "../generated/prisma/client.js";
 
 import restaurants from "./routes/restaurants.js";
 import orders from "./routes/orders.js";
@@ -10,18 +9,12 @@ import cart from "./routes/cart.js";
 import { PrismaClient } from "../generated/prisma/client.js";
 const prisma = new PrismaClient();
 
-import { auth } from "./lib/auth.js";
 import type { AuthType } from "./lib/auth.js";
+import { auth } from "./lib/auth.js";
 
-import { createUserCart, getUserOrders } from "./lib/misc.js";
-
-const app = new Hono<{
-  Bindings: AuthType;
-  Variables: {
-    user: typeof auth.$Infer.Session.user | null;
-    session: typeof auth.$Infer.Session.session | null;
-  };
-}>();
+const app = new Hono<{ Variables: AuthType }>({
+  strict: false,
+});
 
 app.use(
   "/*",
@@ -41,15 +34,8 @@ app.use(
 app.use("*", async (c, next) => {
   const session = await auth.api.getSession({ headers: c.req.raw.headers });
 
-  if (!session) {
-    c.set("user", null);
-    c.set("session", null);
-    console.log(session);
-    return next();
-  }
-
-  c.set("user", session.user);
-  c.set("session", session.session);
+  c.set("user", session?.user ?? null);
+  c.set("session", session?.session ?? null);
 
   return next();
 });
@@ -58,15 +44,18 @@ app.route("/restaurants", restaurants);
 app.route("/orders", orders);
 app.route("/cart", cart);
 
-app.use("/api/auth/sign-up/*", async (c, next) => {
-  await next();
+app.use("*", async (c, next) => {
+  const session = await auth.api.getSession({ headers: c.req.raw.headers });
 
-  if (c.res.ok) {
-    const response = c.res.clone();
-    const data = await response.json();
-
-    createUserCart(data.user);
+  if (!session) {
+    c.set("user", null);
+    c.set("session", null);
+    return next();
   }
+
+  c.set("user", session.user);
+  c.set("session", session.session);
+  return next();
 });
 
 // General auth handler

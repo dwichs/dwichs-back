@@ -2,29 +2,29 @@ import { Hono } from "hono";
 
 import { PrismaClient } from "../../generated/prisma/client.js";
 const prisma = new PrismaClient();
+import type { AuthType } from "../lib/auth.js";
 
 import { getUserOrders } from "../lib/misc.js";
 
-const app = new Hono();
+const app = new Hono<{ Variables: AuthType }>({
+  strict: false,
+});
 
 app.get("/", async (c) => {
-  // @ts-expect-error
   const session = c.get("session");
   if (!session) {
     return c.json({ error: "Unauthorized" }, 401); // 401 for unauthorized
   }
 
-  // @ts-expect-error
   const user = c.get("user");
   if (!user) return c.json({ error: "Unauthorized" }, 401);
 
   const normalizedUser = {
     ...user,
-    // @ts-expect-error
+
     image: user.image ?? null,
   };
 
-  // @ts-expect-error
   const userOrders = await getUserOrders(normalizedUser);
 
   return c.json({
@@ -34,15 +34,12 @@ app.get("/", async (c) => {
 });
 
 app.post("/", async (c) => {
-  // @ts-expect-error
   const session = c.get("session");
   if (!session) return c.json({ error: "Unauthorized" }, 401);
 
-  // @ts-expect-error
   const user = c.get("user");
 
   const cart = await prisma.cart.findUnique({
-    // @ts-expect-error
     where: { userId: user!.id },
     include: { items: { include: { MenuItem: true } } },
   });
@@ -62,7 +59,7 @@ app.post("/", async (c) => {
         totalPrice,
         orderDate: new Date(),
         OrderStatus: { connect: { id: 1 } },
-        // @ts-expect-error
+
         orderParticipants: { create: { userId: user!.id } },
         Restaurant: {
           connect: { id: restaurantIdOfFirstItem },

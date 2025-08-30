@@ -1,8 +1,11 @@
 import { Hono } from "hono";
 import { PrismaClient } from "../../generated/prisma/client.js";
 const prisma = new PrismaClient();
+import type { AuthType } from "../lib/auth.js";
 
-const app = new Hono();
+const app = new Hono<{ Variables: AuthType }>({
+  strict: false,
+});
 
 // get restaurants
 app.get("/", async (c) => {
@@ -26,14 +29,12 @@ app.get("/", async (c) => {
 // return orders of a specific restaurant
 app.get("/:id/orders", async (c) => {
   try {
-    // @ts-expect-error
     const session = c.get("session");
 
     if (!session) {
       return c.json({ error: "Unauthorized" }, 401); // 401 for unauthorized
     }
 
-    // @ts-expect-error
     const user = c.get("user");
 
     const id = Number(c.req.param("id"));
