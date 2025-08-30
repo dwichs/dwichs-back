@@ -5,6 +5,7 @@ import { cors } from "hono/cors";
 import restaurants from "./routes/restaurants.js";
 import orders from "./routes/orders.js";
 import cart from "./routes/cart.js";
+import groups from "./routes/groups.js";
 
 import { PrismaClient } from "../generated/prisma/client.js";
 const prisma = new PrismaClient();
@@ -43,6 +44,7 @@ app.use("*", async (c, next) => {
 app.route("/restaurants", restaurants);
 app.route("/orders", orders);
 app.route("/cart", cart);
+app.route("/groups", groups);
 
 app.use("*", async (c, next) => {
   const session = await auth.api.getSession({ headers: c.req.raw.headers });
