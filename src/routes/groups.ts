@@ -211,4 +211,160 @@ app.post("/join", async (c) => {
     return c.json({ error: "Internal server error" }, 500);
   }
 });
+
+app.post("/leave", async (c) => {
+  try {
+    const body = await c.req.json();
+    const groupId = body.groupId;
+    const user = c.get("user");
+    const userId = user?.id;
+
+    // Basic validation
+    if (!groupId || !userId) {
+      return c.json(
+        { error: "Group ID and user authentication are required" },
+        400,
+      );
+    }
+
+    // Type validation
+    if (typeof userId !== "string") {
+      return c.json({ error: "Invalid user authentication" }, 400);
+    }
+
+    // Convert groupId to integer if it's a string
+    const parsedGroupId = parseInt(groupId);
+    if (isNaN(parsedGroupId)) {
+      return c.json({ error: "Invalid group ID format" }, 400);
+    }
+
+    // Check if group exists and get group details
+    const group = await prisma.group.findUnique({
+      where: { id: parsedGroupId },
+      include: {
+        User: {
+          select: {
+            id: true,
+            name: true,
+          },
+        },
+        GroupMembership: {
+          select: {
+            userId: true,
+            roleInGroup: true,
+          },
+        },
+      },
+    });
+
+    if (!group) {
+      return c.json({ error: "Group not found" }, 404);
+    }
+
+    // Check if user is actually a member of the group
+    const membership = await prisma.groupMembership.findUnique({
+      where: {
+        groupId_userId: {
+          groupId: parsedGroupId,
+          userId: userId,
+        },
+      },
+    });
+
+    if (!membership) {
+      return c.json({ error: "You are not a member of this group" }, 404);
+    }
+
+    // Prevent owner from leaving if there are other members
+    // Owner should transfer ownership or delete the group instead
+    if (group.ownerId === userId) {
+      const otherMembers = group.GroupMembership.filter(
+        (m) => m.userId !== userId,
+      );
+
+      if (otherMembers.length > 0) {
+        return c.json(
+          {
+            error:
+              "Group owner cannot leave while other members exist. Please transfer ownership or delete the group.",
+          },
+          403,
+        );
+      }
+    }
+
+    // Use transaction to handle leaving the group
+    const result = await prisma.$transaction(async (tx) => {
+      // Remove the membership
+      await tx.groupMembership.delete({
+        where: {
+          groupId_userId: {
+            groupId: parsedGroupId,
+            userId: userId,
+          },
+        },
+      });
+
+      // If the owner is leaving and they're the only member, delete the group
+      if (group.ownerId === userId) {
+        await tx.group.delete({
+          where: { id: parsedGroupId },
+        });
+
+        return {
+          message: `Successfully left and deleted group "${group.name}" as you were the only member`,
+          groupDeleted: true,
+        };
+      }
+
+      // Get updated group information
+      const updatedGroup = await tx.group.findUnique({
+        where: { id: parsedGroupId },
+        include: {
+          User: {
+            select: {
+              id: true,
+              name: true,
+            },
+          },
+          GroupMembership: {
+            include: {
+              User: {
+                select: {
+                  id: true,
+                  name: true,
+                  email: true,
+                },
+              },
+            },
+          },
+        },
+      });
+
+      return {
+        message: `Successfully left group "${group.name}"`,
+        group: updatedGroup,
+        groupDeleted: false,
+      };
+    });
+
+    return c.json(result, 200);
+  } catch (error) {
+    console.error("Error leaving group:", error);
+
+    // Handle specific Prisma errors
+    if (error.code === "P2025") {
+      return c.json({ error: "Group membership not found" }, 404);
+    }
+
+    if (error.code === "P2003") {
+      return c.json(
+        { error: "Cannot leave group due to related data constraints" },
+        409,
+      );
+    }
+
+    return c.json({ error: "Internal server error" }, 500);
+  }
+});
 export default app;
