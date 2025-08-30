@@ -34,23 +34,50 @@ app.post("/create", async (c) => {
       return c.json({ error: "Owner not found" }, 404);
     }
 
-    // Create the group
-    const group = await prisma.group.create({
-      data: {
-        name: name,
-        ownerId,
-      },
-      include: {
-        User: {
-          select: {
-            id: true,
-            // Add other user fields you want to return
+    // Create the group and add creator as member in a transaction
+    const result = await prisma.$transaction(async (tx) => {
+      // Create the group
+      const group = await tx.group.create({
+        data: {
+          name: name,
+          ownerId,
+        },
+      });
+
+      // Add the creator as a member with "owner" role
+      await tx.groupMembership.create({
+        data: {
+          groupId: group.id,
+          userId: ownerId,
+          roleInGroup: "owner", // or "admin", "creator", etc. - adjust as needed
+        },
+      });
+
+      // Return the group with membership data
+      return await tx.group.findUnique({
+        where: { id: group.id },
+        include: {
+          User: {
+            select: {
+              id: true,
+              // Add other user fields you want to return
+            },
+          },
+          GroupMembership: {
+            include: {
+              User: {
+                select: {
+                  id: true,
+                  // Add other user fields you want to return
+                },
+              },
+            },
           },
         },
-      },
+      });
     });
 
-    return c.json(group, 201);
+    return c.json(result, 201);
   } catch (error) {
     console.error("Error creating group:", error);
     return c.json({ error: "Internal server error" }, 500);
