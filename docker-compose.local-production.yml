@@ -1,0 +1,45 @@
+services:
+  dwichs-database.local-production:
+    image: postgres
+    hostname: dwichs-database.local-production
+    environment:
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-admin}
+      POSTGRES_USER: ${POSTGRES_USER:-admin}
+      POSTGRES_DB: ${POSTGRES_DB:-dwichs}
+      POSTGRES_HOST_AUTH_METHOD: ${POSTGRES_HOST_AUTH_METHOD:-scram-sha-256}
+    volumes:
+      - dwichs-database.local-production:/var/lib/postgresql/data
+    networks:
+      - dwichs.local-production
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d postgres"]
+      interval: 5s
+      timeout: 2s
+      retries: 20
+
+  dwichs-api.local-production:
+    build:
+      context: .
+      dockerfile: Dockerfile.api
+      target: prod
+      tags:
+        - dwichs-api.local-production
+    ports:
+      - 3000:3000
+    hostname: dwichs-api.local-production
+    stdin_open: true
+    tty: true # Keeps the container running for debugging
+    depends_on:
+      - dwichs-database.local-production
+    env_file:
+      - .env.local-production
+    networks:
+      - dwichs.local-production
+
+volumes:
+  dwichs-database.local-production:
+    name: "dwichs-database.local-production"
+
+networks:
+  dwichs.local-production:
+    name: dwichs.local-production
