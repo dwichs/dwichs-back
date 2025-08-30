@@ -1,9 +1,8 @@
-name: dwichs-back
 services:
-  dwichs-database:
+  database.dev:
     image: postgres
-    container_name: dwichs-database
-    hostname: dwichs-database
+    container_name: dwichs-database.dev
+    hostname: dwichs-database.dev
     restart: unless-stopped
     shm_size: 128mb
     environment:
@@ -12,22 +11,25 @@ services:
       POSTGRES_DB: dwichs
       POSTGRES_HOST_AUTH_METHOD: scram-sha-256
     networks:
-      - dwichs
+      - dwichs.dev
     volumes:
-      - dwichs-database:/var/lib/postgresql/data
+      - dwichs-database.dev:/var/lib/postgresql/data
 
-  dwichs-api:
+  api.dev:
     build:
       context: .
       dockerfile: Dockerfile.api
-    container_name: dwichs-api
-    hostname: dwichs-api
+      target: dev
+      tags:
+        - dwichs-api.dev
+    container_name: dwichs-api.dev
+    hostname: dwichs-api.dev
     restart: unless-stopped
     command: npm run dev
     ports:
       - 3000:3000
     networks:
-      - dwichs
+      - dwichs.dev
     develop:
       watch:
         - action: sync
@@ -46,22 +48,23 @@ services:
           path: .env
           target: /app
 
-  dwichs-prisma-studio:
+  prisma-studio.dev:
     image: node:22
-    container_name: dwichs-prisma-studio
+    container_name: dwichs-prisma-studio.dev
     ports:
       - 5555:5555
     restart: unless-stopped
     working_dir: /app
     command: npx prisma studio --schema=/app/prisma/schema.prisma
     networks:
-      - dwichs
+      - dwichs.dev
     volumes:
       - ./:/app # Ensures your project files including prisma/ are available
 
 volumes:
-  dwichs-database:
-    name: "dwichs-database"
+  dwichs-database.dev:
+    name: "dwichs-database.dev"
 
 networks:
-  dwichs:
+  dwichs.dev:
+    name: dwichs.dev
