@@ -17,7 +17,7 @@ jobs:
           - image: ghcr.io/${{ github.repository }}/reverse-proxy
             dockerfile: Dockerfile.production.reverse-proxy
           - image: ghcr.io/${{ github.repository }}/api
-            dockerfile: Dockerfile.production.api
+            dockerfile: Dockerfile.api
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -40,6 +40,7 @@ jobs:
         with:
           context: .
           file: ${{ matrix.dockerfile }}
+          target: "prod"
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
