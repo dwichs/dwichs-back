@@ -7,6 +7,35 @@ const app = new Hono<{ Variables: AuthType }>({
   strict: false,
 });
 
+app.get("/", async (c) => {
+  try {
+    const user = c.get("user");
+    const userId = user?.id;
+
+    if (!userId) {
+      return c.json({ error: "Unauthorized" }, 401);
+    }
+
+    // Fetch groups where the user is a member, returning only id & name
+    const groups = await prisma.group.findMany({
+      where: {
+        GroupMembership: {
+          some: { userId },
+        },
+      },
+      select: {
+        id: true,
+        name: true,
+      },
+    });
+
+    return c.json({ groups });
+  } catch (err) {
+    console.error("Error fetching groups:", err);
+    return c.json({ error: "Internal Server Error" }, 500);
+  }
+});
+
 // POST /groups - Create a new group
 app.post("/create", async (c) => {
   try {
