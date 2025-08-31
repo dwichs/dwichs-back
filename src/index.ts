@@ -43,7 +43,7 @@ app.use("*", async (c, next) => {
 
 app.route("/restaurants", restaurants);
 app.route("/orders", orders);
-app.route("/cart", cart);
+app.route("/carts", cart);
 app.route("/groups", groups);
 
 app.use("*", async (c, next) => {

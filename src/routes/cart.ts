@@ -7,7 +7,7 @@ const app = new Hono<{ Variables: AuthType }>({
   strict: false,
 });
 
-app.get("/items", async (c) => {
+app.get("/", async (c) => {
   const session = c.get("session");
   if (!session) {
     return c.json({ error: "Unauthorized" }, 401); // 401 for unauthorized
