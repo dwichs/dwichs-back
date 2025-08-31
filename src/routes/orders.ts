@@ -228,4 +228,81 @@ app.post("/", async (c) => {
   }
 });
 
+app.put("/:orderId/status", async (c) => {
+  try {
+    const user = c.get("user");
+    const userId = user?.id;
+    if (!userId) {
+      return c.json({ error: "Unauthorized" }, 401);
+    }
+
+    const orderId = parseInt(c.req.param("orderId"));
+    const { status } = await c.req.json();
+
+    if (isNaN(orderId)) {
+      return c.json({ error: "Invalid order ID" }, 400);
+    }
+
+    if (!status) {
+      return c.json({ error: "Status is required" }, 400);
+    }
+
+    // Validate status values
+    const validStatuses = [
+      "Pending",
+      "Ready for Pickup",
+      "Picked Up",
+      "Cancelled",
+    ];
+    if (!validStatuses.includes(status)) {
+      return c.json({ error: "Invalid status value" }, 400);
+    }
+
+    // Find the order and verify ownership
+    const order = await prisma.order.findUnique({
+      where: { id: orderId },
+      include: {
+        Restaurant: {
+          select: {
+            ownerId: true,
+          },
+        },
+      },
+    });
+
+    if (!order) {
+      return c.json({ error: "Order not found" }, 404);
+    }
+
+    // Check if user owns the restaurant
+    if (order.Restaurant.ownerId !== userId) {
+      return c.json({ error: "You don't own this restaurant" }, 403);
+    }
+
+    // Find the status ID
+    const orderStatus = await prisma.orderStatus.findFirst({
+      where: { name: status },
+    });
+
+    if (!orderStatus) {
+      return c.json({ error: "Status not found in database" }, 400);
+    }
+
+    // Update the order status
+    const updatedOrder = await prisma.order.update({
+      where: { id: orderId },
+      data: { statusId: orderStatus.id },
+    });
+
+    return c.json({
+      success: true,
+      orderId: updatedOrder.id,
+      status: status,
+    });
+  } catch (err) {
+    console.error("Error updating order status:", err);
+    return c.json({ error: "Internal Server Error" }, 500);
+  }
+});
+
 export default app;
