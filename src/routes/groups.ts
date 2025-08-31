@@ -58,12 +58,11 @@ app.post("/create", async (c) => {
     const owner = await prisma.user.findUnique({
       where: { id: ownerId },
     });
-
     if (!owner) {
       return c.json({ error: "Owner not found" }, 404);
     }
 
-    // Create the group and add creator as member in a transaction
+    // Create the group, add creator as member, and create group cart in a transaction
     const result = await prisma.$transaction(async (tx) => {
       // Create the group
       const group = await tx.group.create({
@@ -73,23 +72,29 @@ app.post("/create", async (c) => {
         },
       });
 
+      // Create the group cart
+      await tx.cart.create({
+        data: {
+          groupId: group.id,
+        },
+      });
+
       // Add the creator as a member with "owner" role
       await tx.groupMembership.create({
         data: {
           groupId: group.id,
           userId: ownerId,
-          roleInGroup: "owner", // or "admin", "creator", etc. - adjust as needed
+          roleInGroup: "owner",
         },
       });
 
-      // Return the group with membership data
+      // Return the group with membership data and cart
       return await tx.group.findUnique({
         where: { id: group.id },
         include: {
           User: {
             select: {
               id: true,
-              // Add other user fields you want to return
             },
           },
           GroupMembership: {
@@ -97,9 +102,14 @@ app.post("/create", async (c) => {
               User: {
                 select: {
                   id: true,
-                  // Add other user fields you want to return
                 },
               },
+            },
+          },
+          Cart: {
+            select: {
+              id: true,
+              createdAt: true,
             },
           },
         },
@@ -334,15 +344,34 @@ app.post("/leave", async (c) => {
         },
       });
 
-      // If the owner is leaving and they're the only member, delete the group
+      // If the owner is leaving and they're the only member, delete the group and its cart
       if (group.ownerId === userId) {
+        // Find the group cart
+        const groupCart = await tx.cart.findUnique({
+          where: { groupId: parsedGroupId },
+        });
+
+        // Delete cart items first (if cart exists)
+        if (groupCart) {
+          await tx.cartItem.deleteMany({
+            where: { cartId: groupCart.id },
+          });
+
+          // Delete the cart
+          await tx.cart.delete({
+            where: { groupId: parsedGroupId },
+          });
+        }
+
+        // Delete the group
         await tx.group.delete({
           where: { id: parsedGroupId },
         });
 
         return {
-          message: `Successfully left and deleted group "${group.name}" as you were the only member`,
+          message: `Successfully left and deleted group "${group.name}" and its cart as you were the only member`,
           groupDeleted: true,
+          cartDeleted: !!groupCart,
         };
       }
 
@@ -374,6 +403,7 @@ app.post("/leave", async (c) => {
         message: `Successfully left group "${group.name}"`,
         group: updatedGroup,
         groupDeleted: false,
+        cartDeleted: false,
       };
     });
 
