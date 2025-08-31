@@ -9,44 +9,15 @@ const app = new Hono<{ Variables: AuthType }>({
   strict: false,
 });
 
-app.get("/", async (c) => {
-  const session = c.get("session");
-  if (!session) {
-    return c.json({ error: "Unauthorized" }, 401); // 401 for unauthorized
-  }
-
-  const user = c.get("user");
-
-  if (!user) throw new Error("User is required");
-
-  const menuItems = await getCartItems(user);
-
-  return c.json({
-    success: true,
-    data: menuItems,
-  });
-});
-
-app.post("/", async (c) => {
+app.get("/items", async (c) => {
   try {
-    const session = c.get("session");
-    if (!session) {
+    const user = c.get("user");
+    const userId = user?.id;
+    if (!userId) {
       return c.json({ error: "Unauthorized" }, 401);
     }
 
-    const user = c.get("user");
-    if (!user) {
-      return c.json({ error: "User is required" }, 400);
-    }
-
-    const { menuItemId } = await c.req.json();
     const groupId = c.req.query("groupId");
-
-    console.log(menuItemId, groupId);
-
-    if (!menuItemId) {
-      return c.json({ error: "menuItemId is required" }, 400);
-    }
 
     let cart;
 
@@ -56,7 +27,7 @@ app.post("/", async (c) => {
         where: {
           groupId_userId: {
             groupId: parseInt(groupId),
-            userId: user.id,
+            userId: userId,
           },
         },
       });
@@ -65,23 +36,122 @@ app.post("/", async (c) => {
         return c.json({ error: "You are not a member of this group" }, 403);
       }
 
-      // Find group cart
+      // Fetch group cart
+      cart = await prisma.cart.findUnique({
+        where: { groupId: parseInt(groupId) },
+        include: {
+          items: {
+            include: {
+              MenuItem: {
+                select: {
+                  id: true,
+                  name: true,
+                  price: true,
+                  ingredients: true,
+                },
+              },
+              User: {
+                select: {
+                  id: true,
+                  name: true,
+                },
+              },
+            },
+          },
+        },
+      });
+    } else {
+      // Fetch user cart
+      cart = await prisma.cart.findUnique({
+        where: { userId: userId },
+        include: {
+          items: {
+            include: {
+              MenuItem: {
+                select: {
+                  id: true,
+                  name: true,
+                  price: true,
+                  ingredients: true,
+                },
+              },
+              User: {
+                select: {
+                  id: true,
+                  name: true,
+                },
+              },
+            },
+          },
+        },
+      });
+    }
+
+    if (!cart) {
+      return c.json({ error: "Cart not found" }, 404);
+    }
+
+    return c.json({
+      cartItems: cart.items.map((item) => ({
+        id: item.MenuItem.id,
+        name: item.MenuItem.name,
+        price: item.MenuItem.price,
+        ingredients: item.MenuItem.ingredients,
+        addedBy: {
+          id: item.User?.id,
+          name: item.User?.name,
+        },
+      })),
+    });
+  } catch (err) {
+    console.error("Error fetching cart:", err);
+    return c.json({ error: "Internal Server Error" }, 500);
+  }
+});
+
+app.post("/", async (c) => {
+  try {
+    const user = c.get("user");
+    const userId = user?.id;
+    if (!userId) {
+      return c.json({ error: "Unauthorized" }, 401);
+    }
+
+    const { menuItemId } = await c.req.json();
+    const groupId = c.req.query("groupId");
+
+    if (!menuItemId) {
+      return c.json({ error: "menuItemId is required" }, 400);
+    }
+
+    // Find the appropriate cart
+    let cart;
+    if (groupId) {
+      // Check if user is in the group
+      const membership = await prisma.groupMembership.findUnique({
+        where: {
+          groupId_userId: {
+            groupId: parseInt(groupId),
+            userId: userId,
+          },
+        },
+      });
+
+      if (!membership) {
+        return c.json({ error: "Not a member of this group" }, 403);
+      }
+
       cart = await prisma.cart.findUnique({
         where: { groupId: parseInt(groupId) },
       });
-
-      if (!cart) {
-        return c.json({ error: "Group cart not found" }, 404);
-      }
     } else {
-      // Find user cart
       cart = await prisma.cart.findUnique({
-        where: { userId: user.id },
+        where: { userId: userId },
       });
+    }
 
-      if (!cart) {
-        return c.json({ error: "User cart not found" }, 404);
-      }
+    if (!cart) {
+      return c.json({ error: "Cart not found" }, 404);
     }
 
     // Verify menu item exists
@@ -98,7 +168,7 @@ app.post("/", async (c) => {
       data: {
         cartId: cart.id,
         menuItemId: parseInt(menuItemId),
-        userId: user.id,
+        userId: userId,
       },
     });
 
@@ -115,5 +185,44 @@ app.post("/", async (c) => {
     return c.json({ error: "Internal Server Error" }, 500);
   }
 });
+// app.post("/", async (c) => {
+//   const session = c.get("session");
+//   if (!session) {
+//     return c.json({ error: "Unauthorized" }, 401); // 401 for unauthorized
+//   }
+//
+//   const user = c.get("user");
+//   if (!user) return c.json({ error: "Unauthorized" }, 401);
+//
+//   const normalizedUser = {
+//     ...user,
+//
+//     image: user!.image ?? null,
+//   };
+//
+//   try {
+//     const body = await c.req.json();
+//     if (!body.menuItemId) {
+//       return c.json({ error: "menuItemId is required" }, 400);
+//     }
+//
+//     await addMenuItemToCart(normalizedUser, body.menuItemId); // Make sure this is awaited!
+//
+//     return c.json({ message: "Menu item added to cart" }, 201);
+//   } catch (err) {
+//     console.error("Cart error:", err);
+//
+//     // let status;
+//     //
+//     // // Differentiate between client and server errors
+//     // if (err instanceof prisma.PrismaClientKnownRequestError) {
+//     //   // Handle Prisma-specific errors (400 Bad Request)
+//     //   return c.json({ error: "Database error", details: err.message }, 400);
+//     // } else {
+//     //   // Generic server error (500)
+//     //
+//     return c.json({ error: "Failed to update cart" }, 500);
+//   }
+// });
 
 export default app;
