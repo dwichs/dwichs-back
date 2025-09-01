@@ -1,6 +1,6 @@
 services:
   reverse-proxy:
-    image: ghcr.io/dwichs/dwichs-back/reverse-proxy:main
+    image: dwichs-reverse-proxy:latest
     hostname: dwichs-reverse-proxy
     cap_add:
       - NET_ADMIN
@@ -15,7 +15,7 @@ services:
       - dwichs
 
   api:
-    image: ghcr.io/dwichs/dwichs-back/api:main
+    image: dwichs-api:latest
     hostname: dwichs-api
     stdin_open: true
     tty: true # Keeps the container running for debugging
@@ -43,6 +43,19 @@ services:
       interval: 5s
       timeout: 2s
       retries: 20
+
+  dwichs-prisma-studio:
+      image: node:22
+      container_name: dwichs-prisma-studio
+      ports:
+        - 5555:5555
+      restart: unless-stopped
+      working_dir: /app
+      command: npx prisma studio --schema=/app/prisma/schema.prisma
+      networks:
+        - dwichs
+      volumes:
+        - ./:/app # Ensures your project files including prisma/ are available
 
 networks:
   dwichs:
