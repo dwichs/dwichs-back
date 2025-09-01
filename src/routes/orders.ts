@@ -209,17 +209,31 @@ app.post("/", async (c) => {
         })),
       });
 
+      // Create payment record - user placing the order is the payer
+      const payment = await tx.payment.create({
+        data: {
+          amount: totalPrice,
+          status: "paid", // Initial status - could be "pending", "processing", etc.
+          orderId: newOrder.id,
+          userId: userId, // The user placing the order is the payer
+          paymentMethodId: null, // Set to null initially, can be updated later
+          transactionReference: null, // Will be set when actual payment is processed
+        },
+      });
+
       // Clear the cart after successful order
       await tx.cartItem.deleteMany({
         where: { cartId: cart.id },
       });
 
-      return newOrder;
+      return { order: newOrder, payment };
     });
 
     return c.json({
       success: true,
-      orderId: order.id,
+      orderId: order.order.id,
+      paymentId: order.payment.id,
+      totalAmount: totalPrice,
       message: "Order placed successfully",
     });
   } catch (err) {
