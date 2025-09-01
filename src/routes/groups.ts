@@ -117,7 +117,7 @@ app.post("/create", async (c) => {
     });
 
     return c.json(result, 201);
-  } catch (error) {
+  } catch (error: unknown) {
     console.error("Error creating group:", error);
     return c.json({ error: "Internal server error" }, 500);
   }
@@ -235,16 +235,18 @@ app.post("/join", async (c) => {
       },
       200,
     );
-  } catch (error) {
+  } catch (error: unknown) {
     console.error("Error joining group:", error);
 
     // Handle specific Prisma errors
-    if (error.code === "P2002") {
-      return c.json({ error: "User is already a member of this group" }, 409);
-    }
+    if (error && typeof error === "object" && "code" in error) {
+      if (error.code === "P2002") {
+        return c.json({ error: "User is already a member of this group" }, 409);
+      }
 
-    if (error.code === "P2025") {
-      return c.json({ error: "Group or user not found" }, 404);
+      if (error.code === "P2025") {
+        return c.json({ error: "Group or user not found" }, 404);
+      }
     }
 
     return c.json({ error: "Internal server error" }, 500);
@@ -408,22 +410,25 @@ app.post("/leave", async (c) => {
     });
 
     return c.json(result, 200);
-  } catch (error) {
+  } catch (error: unknown) {
     console.error("Error leaving group:", error);
 
     // Handle specific Prisma errors
-    if (error.code === "P2025") {
-      return c.json({ error: "Group membership not found" }, 404);
-    }
+    if (error && typeof error === "object" && "code" in error) {
+      if (error.code === "P2025") {
+        return c.json({ error: "Group membership not found" }, 404);
+      }
 
-    if (error.code === "P2003") {
-      return c.json(
-        { error: "Cannot leave group due to related data constraints" },
-        409,
-      );
+      if (error.code === "P2003") {
+        return c.json(
+          { error: "Cannot leave group due to related data constraints" },
+          409,
+        );
+      }
     }
 
     return c.json({ error: "Internal server error" }, 500);
   }
 });
+
 export default app;
