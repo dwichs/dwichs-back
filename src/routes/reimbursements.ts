@@ -64,6 +64,24 @@ app.get("/", async (c) => {
                 name: true,
               },
             },
+            Reimbursement: {
+              include: {
+                debtor: {
+                  select: {
+                    id: true,
+                    name: true,
+                    email: true,
+                  },
+                },
+                creditor: {
+                  select: {
+                    id: true,
+                    name: true,
+                    email: true,
+                  },
+                },
+              },
+            },
           },
         },
       },
@@ -74,7 +92,7 @@ app.get("/", async (c) => {
       (orderParticipant) => orderParticipant.Order.orderParticipants.length > 1,
     );
 
-    // Calculate reimbursements
+    // Calculate and create/update reimbursements
     const reimbursements = {
       owedToMe: [], // Who owes money to the current user
       owedByMe: [], // Who the current user owes money to
@@ -131,11 +149,11 @@ app.get("/", async (c) => {
       });
 
       // Calculate reimbursements for this order
-      Object.keys(userShares).forEach((consumerId) => {
+      for (const consumerId of Object.keys(userShares)) {
         const consumerShare = userShares[consumerId].amount;
         const consumer = userShares[consumerId].user;
 
-        Object.keys(payers).forEach((payerId) => {
+        for (const payerId of Object.keys(payers)) {
           const payerTotalPaid = payers[payerId].amount;
           const payer = payers[payerId].user;
 
@@ -145,13 +163,79 @@ app.get("/", async (c) => {
             (consumerShare / totalOrderAmount) * payerTotalPaid;
 
           // Skip if the consumer is the payer (can't owe themselves)
-          if (consumerId === payerId) return;
+          if (consumerId === payerId) continue;
 
           // Round to 2 decimal places
           const roundedAmount = Math.round(owedAmount * 100) / 100;
 
           if (roundedAmount > 0.01) {
             // Only include amounts greater than 1 cent
+
+            // Check if reimbursement already exists
+            let existingReimbursement = order.Reimbursement.find(
+              (reimb) =>
+                reimb.debtorId === consumerId && reimb.creditorId === payerId,
+            );
+
+            if (!existingReimbursement) {
+              // Create new reimbursement record
+              existingReimbursement = await prisma.reimbursement.create({
+                data: {
+                  amount: roundedAmount,
+                  status: "pending",
+                  description: `Reimbursement for order at ${order.Restaurant.name}`,
+                  debtorId: consumerId,
+                  creditorId: payerId,
+                  orderId: order.id,
+                },
+                include: {
+                  debtor: {
+                    select: {
+                      id: true,
+                      name: true,
+                      email: true,
+                    },
+                  },
+                  creditor: {
+                    select: {
+                      id: true,
+                      name: true,
+                      email: true,
+                    },
+                  },
+                },
+              });
+            } else if (
+              Math.abs(
+                parseFloat(existingReimbursement.amount) - roundedAmount,
+              ) > 0.01
+            ) {
+              // Update existing reimbursement if amount changed significantly
+              existingReimbursement = await prisma.reimbursement.update({
+                where: { id: existingReimbursement.id },
+                data: {
+                  amount: roundedAmount,
+                  updatedAt: new Date(),
+                },
+                include: {
+                  debtor: {
+                    select: {
+                      id: true,
+                      name: true,
+                      email: true,
+                    },
+                  },
+                  creditor: {
+                    select: {
+                      id: true,
+                      name: true,
+                      email: true,
+                    },
+                  },
+                },
+              });
+            }
+
             if (consumerId === userId) {
               // Current user owes money to someone else
               const existingDebt = reimbursements.owedByMe.find(
@@ -160,22 +244,30 @@ app.get("/", async (c) => {
 
               if (existingDebt) {
                 existingDebt.amount += roundedAmount;
-                existingDebt.orders.push({
+                existingDebt.reimbursements.push({
+                  id: existingReimbursement.id,
                   orderId: order.id,
                   restaurant: order.Restaurant.name,
                   orderDate: order.orderDate,
                   amount: roundedAmount,
+                  status: existingReimbursement.status,
+                  createdAt: existingReimbursement.createdAt,
+                  updatedAt: existingReimbursement.updatedAt,
                 });
               } else {
                 reimbursements.owedByMe.push({
                   user: payer,
                   amount: roundedAmount,
-                  orders: [
+                  reimbursements: [
                     {
+                      id: existingReimbursement.id,
                       orderId: order.id,
                       restaurant: order.Restaurant.name,
                       orderDate: order.orderDate,
                       amount: roundedAmount,
+                      status: existingReimbursement.status,
+                      createdAt: existingReimbursement.createdAt,
+                      updatedAt: existingReimbursement.updatedAt,
                     },
                   ],
                 });
@@ -188,30 +280,38 @@ app.get("/", async (c) => {
 
               if (existingCredit) {
                 existingCredit.amount += roundedAmount;
-                existingCredit.orders.push({
+                existingCredit.reimbursements.push({
+                  id: existingReimbursement.id,
                   orderId: order.id,
                   restaurant: order.Restaurant.name,
                   orderDate: order.orderDate,
                   amount: roundedAmount,
+                  status: existingReimbursement.status,
+                  createdAt: existingReimbursement.createdAt,
+                  updatedAt: existingReimbursement.updatedAt,
                 });
               } else {
                 reimbursements.owedToMe.push({
                   user: consumer,
                   amount: roundedAmount,
-                  orders: [
+                  reimbursements: [
                     {
+                      id: existingReimbursement.id,
                       orderId: order.id,
                       restaurant: order.Restaurant.name,
                       orderDate: order.orderDate,
                       amount: roundedAmount,
+                      status: existingReimbursement.status,
+                      createdAt: existingReimbursement.createdAt,
+                      updatedAt: existingReimbursement.updatedAt,
                     },
                   ],
                 });
               }
             }
           }
-        });
-      });
+        }
+      }
     }
 
     // Calculate summary totals
@@ -257,145 +357,343 @@ app.get("/", async (c) => {
   }
 });
 
-app.post("/mark-paid", async (c) => {
+app.patch("/:id/mark-paid", async (c) => {
   try {
+    const user = c.get("user");
+    const userId = user?.id;
+    if (!userId) {
+      return c.json({ error: "Unauthorized" }, 401);
+    }
+
+    const reimbursementId = parseInt(c.req.param("id"));
+    if (isNaN(reimbursementId)) {
+      return c.json({ error: "Invalid reimbursement ID" }, 400);
+    }
+
+    // Get the request body
     const body = await c.req.json();
-    const { reimbursementId, userId, amount, paidAt } = body;
+    const {
+      status = "paid",
+      settledAt,
+      paymentMethodId,
+      transactionReference,
+    } = body;
 
-    // Basic validation
-    if (!reimbursementId || !userId || !amount || !paidAt) {
+    // Validate status
+    const validStatuses = ["paid", "completed", "settled"];
+    if (!validStatuses.includes(status.toLowerCase())) {
       return c.json(
-        {
-          success: false,
-          error: "Missing required fields",
-        },
+        { error: "Invalid status. Must be one of: paid, completed, settled" },
         400,
       );
     }
 
-    // Parse reimbursementId to integer
-    const parsedReimbursementId = parseInt(reimbursementId);
-
-    if (isNaN(parsedReimbursementId)) {
-      return c.json(
-        {
-          success: false,
-          error: "Invalid reimbursement ID",
+    // First, find the reimbursement and verify permissions
+    const reimbursement = await prisma.reimbursement.findUnique({
+      where: { id: reimbursementId },
+      include: {
+        debtor: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+          },
         },
-        400,
-      );
-    }
-
-    // Start a transaction to ensure data consistency
-    const result = await prisma.$transaction(async (tx) => {
-      // First, verify the reimbursement exists and belongs to the current user
-      const reimbursement = await tx.reimbursement.findUnique({
-        where: {
-          id: parsedReimbursementId,
+        creditor: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+          },
         },
-        include: {
-          debtor: true,
-          creditor: true,
-          order: {
-            include: {
-              restaurant: true,
-              OrderItem: true,
+        order: {
+          select: {
+            id: true,
+            Restaurant: {
+              select: {
+                name: true,
+              },
             },
           },
         },
-      });
-
-      if (!reimbursement) {
-        throw new Error("Reimbursement not found");
-      }
-
-      // Verify the amount matches (security check)
-      if (parseFloat(reimbursement.amount.toString()) !== amount) {
-        throw new Error("Amount mismatch");
-      }
-
-      // Check if already paid
-      if (reimbursement.status === "paid") {
-        throw new Error("Reimbursement already marked as paid");
-      }
-
-      // Update the reimbursement status
-      const updatedReimbursement = await tx.reimbursement.update({
-        where: { id: parsedReimbursementId },
-        data: {
-          status: "paid",
-          settledAt: new Date(paidAt),
-          updatedAt: new Date(),
-        },
-      });
-
-      // Create a payment record for audit trail
-      const paymentRecord = await tx.payment.create({
-        data: {
-          orderId: reimbursement.orderId,
-          userId: reimbursement.debtorId,
-          amount: reimbursement.amount,
-          status: "completed",
-          paymentDate: new Date(paidAt),
-          transactionReference: `reimb_${parsedReimbursementId}_${Date.now()}`,
-        },
-      });
-
-      return {
-        reimbursement: updatedReimbursement,
-        payment: paymentRecord,
-      };
+      },
     });
 
-    return c.json(
-      {
-        success: true,
-        message: "Reimbursement marked as paid successfully",
-        data: {
-          reimbursementId: result.reimbursement.id,
-          status: result.reimbursement.status,
-          settledAt: result.reimbursement.settledAt,
-          paymentId: result.payment.id,
+    if (!reimbursement) {
+      return c.json({ error: "Reimbursement not found" }, 404);
+    }
+
+    // Check if the current user is either the debtor or creditor
+    const isDebtor = reimbursement.debtorId === userId;
+    const isCreditor = reimbursement.creditorId === userId;
+
+    if (!isDebtor && !isCreditor) {
+      return c.json(
+        {
+          error:
+            "Forbidden. You can only mark reimbursements as paid if you are involved in the transaction",
         },
-      },
-      200,
-    );
-  } catch (error) {
-    console.error("Error marking reimbursement as paid:", error);
+        403,
+      );
+    }
 
-    // Handle specific error types
-    if (error instanceof Error) {
-      if (error.message === "Reimbursement not found") {
-        return c.json(
-          {
-            success: false,
-            error: "Reimbursement not found",
+    // Check if already paid
+    if (
+      ["paid", "completed", "settled"].includes(
+        reimbursement.status.toLowerCase(),
+      )
+    ) {
+      return c.json(
+        {
+          error: "Reimbursement is already marked as paid",
+          data: {
+            id: reimbursement.id,
+            status: reimbursement.status,
+            settledAt: reimbursement.settledAt,
           },
-          404,
-        );
-      }
+        },
+        409,
+      );
+    }
 
-      if (
-        error.message === "Amount mismatch" ||
-        error.message === "Reimbursement already marked as paid"
-      ) {
+    // Validate payment method if provided
+    if (paymentMethodId) {
+      const paymentMethod = await prisma.paymentMethod.findFirst({
+        where: {
+          id: paymentMethodId,
+          userId: userId, // Ensure the payment method belongs to the current user
+        },
+      });
+
+      if (!paymentMethod) {
         return c.json(
           {
-            success: false,
-            error: error.message,
+            error:
+              "Invalid payment method or payment method does not belong to you",
           },
           400,
         );
       }
     }
 
-    return c.json(
-      {
-        success: false,
-        error: "Internal server error",
+    // Update the reimbursement
+    const updatedReimbursement = await prisma.reimbursement.update({
+      where: { id: reimbursementId },
+      data: {
+        status: status.toLowerCase(),
+        settledAt: settledAt ? new Date(settledAt) : new Date(),
+        updatedAt: new Date(),
+        ...(paymentMethodId && { paymentMethodId }),
+        ...(transactionReference && { transactionReference }),
       },
-      500,
-    );
+      include: {
+        debtor: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+          },
+        },
+        creditor: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+          },
+        },
+        order: {
+          select: {
+            id: true,
+            orderDate: true,
+            Restaurant: {
+              select: {
+                name: true,
+              },
+            },
+          },
+        },
+        paymentMethod: {
+          select: {
+            id: true,
+            type: true,
+            accountNumber: true,
+          },
+        },
+      },
+    });
+
+    return c.json({
+      success: true,
+      message: `Reimbursement successfully marked as ${status}`,
+      data: {
+        id: updatedReimbursement.id,
+        amount: updatedReimbursement.amount,
+        status: updatedReimbursement.status,
+        settledAt: updatedReimbursement.settledAt,
+        updatedAt: updatedReimbursement.updatedAt,
+        debtor: updatedReimbursement.debtor,
+        creditor: updatedReimbursement.creditor,
+        order: {
+          id: updatedReimbursement.order.id,
+          orderDate: updatedReimbursement.order.orderDate,
+          restaurant: updatedReimbursement.order.Restaurant.name,
+        },
+        paymentMethod: updatedReimbursement.paymentMethod,
+        transactionReference: updatedReimbursement.transactionReference,
+        markedBy: {
+          userId,
+          role: isDebtor ? "debtor" : "creditor",
+        },
+      },
+    });
+  } catch (err) {
+    console.error("Error marking reimbursement as paid:", err);
+
+    // Handle specific Prisma errors
+    if (err.code === "P2025") {
+      return c.json({ error: "Reimbursement not found" }, 404);
+    }
+
+    if (err.code === "P2002") {
+      return c.json({ error: "Database constraint violation" }, 400);
+    }
+
+    return c.json({ error: "Internal Server Error" }, 500);
+  }
+});
+
+// Optional: Endpoint to get reimbursement details
+app.get("/reimbursements/:id", async (c) => {
+  try {
+    const user = c.get("user");
+    const userId = user?.id;
+    if (!userId) {
+      return c.json({ error: "Unauthorized" }, 401);
+    }
+
+    const reimbursementId = parseInt(c.req.param("id"));
+    if (isNaN(reimbursementId)) {
+      return c.json({ error: "Invalid reimbursement ID" }, 400);
+    }
+
+    const reimbursement = await prisma.reimbursement.findUnique({
+      where: { id: reimbursementId },
+      include: {
+        debtor: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+          },
+        },
+        creditor: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+          },
+        },
+        order: {
+          select: {
+            id: true,
+            orderDate: true,
+            Restaurant: {
+              select: {
+                name: true,
+              },
+            },
+          },
+        },
+        paymentMethod: {
+          select: {
+            id: true,
+            type: true,
+            accountNumber: true,
+          },
+        },
+      },
+    });
+
+    if (!reimbursement) {
+      return c.json({ error: "Reimbursement not found" }, 404);
+    }
+
+    // Check if the current user is either the debtor or creditor
+    const isDebtor = reimbursement.debtorId === userId;
+    const isCreditor = reimbursement.creditorId === userId;
+
+    if (!isDebtor && !isCreditor) {
+      return c.json({ error: "Forbidden" }, 403);
+    }
+
+    return c.json({
+      success: true,
+      data: reimbursement,
+    });
+  } catch (err) {
+    console.error("Error fetching reimbursement:", err);
+    return c.json({ error: "Internal Server Error" }, 500);
+  }
+});
+
+// Optional: Endpoint to dispute a reimbursement
+app.patch("/reimbursements/:id/dispute", async (c) => {
+  try {
+    const user = c.get("user");
+    const userId = user?.id;
+    if (!userId) {
+      return c.json({ error: "Unauthorized" }, 401);
+    }
+
+    const reimbursementId = parseInt(c.req.param("id"));
+    if (isNaN(reimbursementId)) {
+      return c.json({ error: "Invalid reimbursement ID" }, 400);
+    }
+
+    const body = await c.req.json();
+    const { reason } = body;
+
+    if (!reason || reason.trim().length === 0) {
+      return c.json({ error: "Dispute reason is required" }, 400);
+    }
+
+    const reimbursement = await prisma.reimbursement.findUnique({
+      where: { id: reimbursementId },
+    });
+
+    if (!reimbursement) {
+      return c.json({ error: "Reimbursement not found" }, 404);
+    }
+
+    // Check if the current user is either the debtor or creditor
+    const isDebtor = reimbursement.debtorId === userId;
+    const isCreditor = reimbursement.creditorId === userId;
+
+    if (!isDebtor && !isCreditor) {
+      return c.json({ error: "Forbidden" }, 403);
+    }
+
+    const updatedReimbursement = await prisma.reimbursement.update({
+      where: { id: reimbursementId },
+      data: {
+        status: "disputed",
+        description: `${reimbursement.description || ""}\n\nDISPUTE: ${reason}`,
+        updatedAt: new Date(),
+      },
+    });
+
+    return c.json({
+      success: true,
+      message: "Reimbursement marked as disputed",
+      data: {
+        id: updatedReimbursement.id,
+        status: updatedReimbursement.status,
+        description: updatedReimbursement.description,
+      },
+    });
+  } catch (err) {
+    console.error("Error disputing reimbursement:", err);
+    return c.json({ error: "Internal Server Error" }, 500);
   }
 });
 

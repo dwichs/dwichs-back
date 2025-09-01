@@ -27,7 +27,7 @@ app.use(
       "https://dwichs.karitchi.com",
       "https://merchants.karitchi.com",
     ],
-    allowMethods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allowMethods: ["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
     allowHeaders: ["Content-Type", "Authorization"],
     credentials: true,
   }),
