@@ -12,26 +12,101 @@ const app = new Hono<{ Variables: AuthType }>({
 });
 
 app.get("/", async (c) => {
-  const session = c.get("session");
-  if (!session) {
-    return c.json({ error: "Unauthorized" }, 401); // 401 for unauthorized
+  try {
+    const user = c.get("user");
+    const userId = user?.id;
+    if (!userId) {
+      return c.json({ error: "Unauthorized" }, 401);
+    }
+
+    // Find all orders where the user participated
+    const orders = await prisma.order.findMany({
+      where: {
+        orderParticipants: {
+          some: {
+            userId: userId,
+          },
+        },
+      },
+      include: {
+        OrderStatus: {
+          select: {
+            name: true,
+          },
+        },
+        Restaurant: {
+          select: {
+            name: true,
+          },
+        },
+        OrderItem: {
+          include: {
+            User: {
+              select: {
+                id: true,
+                name: true,
+              },
+            },
+          },
+        },
+        orderParticipants: {
+          select: {
+            userId: true,
+          },
+        },
+      },
+      orderBy: {
+        orderDate: "desc",
+      },
+    });
+
+    const formattedOrders = orders.map((order) => {
+      // Separate user's items from others
+      const myItems = order.OrderItem.filter((item) => item.userId === userId);
+      const otherItems = order.OrderItem.filter(
+        (item) => item.userId !== userId,
+      );
+
+      // Calculate user's total
+      const myTotal = myItems.reduce(
+        (sum, item) => sum + parseFloat(item.priceAtOrder),
+        0,
+      );
+
+      // Check if it's a group order (more than one participant)
+      const isGroupOrder = order.orderParticipants.length > 1;
+
+      return {
+        id: order.id,
+        orderDate: order.orderDate,
+        status: order.OrderStatus.name,
+        totalPrice: order.totalPrice,
+        isGroupOrder: isGroupOrder,
+        myTotal: myTotal.toFixed(2),
+        restaurant: {
+          name: order.Restaurant.name,
+        },
+        myItems: myItems.map((item) => ({
+          name: item.nameAtOrder,
+          price: item.priceAtOrder,
+          specialRequest: item.specialRequest,
+        })),
+        otherItems: otherItems.map((item) => ({
+          name: item.nameAtOrder,
+          price: item.priceAtOrder,
+          specialRequest: item.specialRequest,
+          orderedBy: item.User?.name || "Unknown",
+        })),
+      };
+    });
+
+    return c.json({
+      orders: formattedOrders,
+    });
+  } catch (err) {
+    console.error("Error fetching user order history:", err);
+    return c.json({ error: "Internal Server Error" }, 500);
   }
-
-  const user = c.get("user");
-  if (!user) return c.json({ error: "Unauthorized" }, 401);
-
-  const normalizedUser = {
-    ...user,
-
-    image: user.image ?? null,
-  };
-
-  const userOrders = await getUserOrders(normalizedUser);
-
-  return c.json({
-    success: true,
-    data: userOrders,
-  });
 });
 
 app.get("/merchants", async (c) => {
