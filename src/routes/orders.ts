@@ -29,7 +29,10 @@ app.get("/", async (c) => {
 
   return c.json({
     success: true,
-    data: userOrders,
+    data: {
+      orders: userOrders,
+      currentUserId: user.id,
+    },
   });
 });
 
