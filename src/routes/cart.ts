@@ -55,8 +55,12 @@ app.get("/items", async (c) => {
           },
         },
       });
+
+      if (!cart) {
+        return c.json({ error: "Group cart not found" }, 404);
+      }
     } else {
-      // Fetch user cart
+      // Fetch user cart or create if it doesn't exist
       cart = await prisma.cart.findUnique({
         where: { userId: userId },
         include: {
@@ -80,13 +84,40 @@ app.get("/items", async (c) => {
           },
         },
       });
+
+      // Create user cart if it doesn't exist
+      if (!cart) {
+        cart = await prisma.cart.create({
+          data: {
+            userId: userId,
+          },
+          include: {
+            items: {
+              include: {
+                MenuItem: {
+                  select: {
+                    id: true,
+                    name: true,
+                    price: true,
+                    ingredients: true,
+                  },
+                },
+                User: {
+                  select: {
+                    id: true,
+                    name: true,
+                  },
+                },
+              },
+            },
+          },
+        });
+      }
     }
-    if (!cart) {
-      return c.json({ error: "Cart not found" }, 404);
-    }
+
     return c.json({
       cartItems: cart.items.map((item) => ({
-        cartItemId: item.id, // Added cart item ID
+        cartItemId: item.id,
         id: item.MenuItem.id,
         name: item.MenuItem.name,
         price: item.MenuItem.price,
