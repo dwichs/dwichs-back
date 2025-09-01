@@ -100,7 +100,14 @@ app.get("/", async (c) => {
         totalOwedToMe: 0,
         totalOwedByMe: 0,
         netBalance: 0, // Positive means others owe you, negative means you owe others
+        totalPaidToMe: 0, // Total amount that has been paid to me
+        totalPaidByMe: 0, // Total amount I have paid
       },
+    };
+
+    // Helper function to check if a reimbursement status indicates it's settled
+    const isReimbursementSettled = (status) => {
+      return ["paid", "completed", "settled"].includes(status.toLowerCase());
     };
 
     // Process each group order
@@ -208,9 +215,10 @@ app.get("/", async (c) => {
             } else if (
               Math.abs(
                 parseFloat(existingReimbursement.amount) - roundedAmount,
-              ) > 0.01
+              ) > 0.01 &&
+              !isReimbursementSettled(existingReimbursement.status)
             ) {
-              // Update existing reimbursement if amount changed significantly
+              // Update existing reimbursement if amount changed significantly and it's not settled
               existingReimbursement = await prisma.reimbursement.update({
                 where: { id: existingReimbursement.id },
                 data: {
@@ -236,77 +244,96 @@ app.get("/", async (c) => {
               });
             }
 
+            // Check if this reimbursement is settled/paid
+            const isSettled = isReimbursementSettled(
+              existingReimbursement.status,
+            );
+
             if (consumerId === userId) {
               // Current user owes money to someone else
-              const existingDebt = reimbursements.owedByMe.find(
-                (debt) => debt.user.id === payerId,
-              );
 
-              if (existingDebt) {
-                existingDebt.amount += roundedAmount;
-                existingDebt.reimbursements.push({
-                  id: existingReimbursement.id,
-                  orderId: order.id,
-                  restaurant: order.Restaurant.name,
-                  orderDate: order.orderDate,
-                  amount: roundedAmount,
-                  status: existingReimbursement.status,
-                  createdAt: existingReimbursement.createdAt,
-                  updatedAt: existingReimbursement.updatedAt,
-                });
+              if (isSettled) {
+                // Add to paid summary but don't include in owedByMe
+                reimbursements.summary.totalPaidByMe += roundedAmount;
               } else {
-                reimbursements.owedByMe.push({
-                  user: payer,
-                  amount: roundedAmount,
-                  reimbursements: [
-                    {
-                      id: existingReimbursement.id,
-                      orderId: order.id,
-                      restaurant: order.Restaurant.name,
-                      orderDate: order.orderDate,
-                      amount: roundedAmount,
-                      status: existingReimbursement.status,
-                      createdAt: existingReimbursement.createdAt,
-                      updatedAt: existingReimbursement.updatedAt,
-                    },
-                  ],
-                });
+                // Only include unsettled reimbursements in the owed list
+                const existingDebt = reimbursements.owedByMe.find(
+                  (debt) => debt.user.id === payerId,
+                );
+
+                if (existingDebt) {
+                  existingDebt.amount += roundedAmount;
+                  existingDebt.reimbursements.push({
+                    id: existingReimbursement.id,
+                    orderId: order.id,
+                    restaurant: order.Restaurant.name,
+                    orderDate: order.orderDate,
+                    amount: roundedAmount,
+                    status: existingReimbursement.status,
+                    createdAt: existingReimbursement.createdAt,
+                    updatedAt: existingReimbursement.updatedAt,
+                  });
+                } else {
+                  reimbursements.owedByMe.push({
+                    user: payer,
+                    amount: roundedAmount,
+                    reimbursements: [
+                      {
+                        id: existingReimbursement.id,
+                        orderId: order.id,
+                        restaurant: order.Restaurant.name,
+                        orderDate: order.orderDate,
+                        amount: roundedAmount,
+                        status: existingReimbursement.status,
+                        createdAt: existingReimbursement.createdAt,
+                        updatedAt: existingReimbursement.updatedAt,
+                      },
+                    ],
+                  });
+                }
               }
             } else if (payerId === userId) {
               // Someone else owes money to current user
-              const existingCredit = reimbursements.owedToMe.find(
-                (credit) => credit.user.id === consumerId,
-              );
 
-              if (existingCredit) {
-                existingCredit.amount += roundedAmount;
-                existingCredit.reimbursements.push({
-                  id: existingReimbursement.id,
-                  orderId: order.id,
-                  restaurant: order.Restaurant.name,
-                  orderDate: order.orderDate,
-                  amount: roundedAmount,
-                  status: existingReimbursement.status,
-                  createdAt: existingReimbursement.createdAt,
-                  updatedAt: existingReimbursement.updatedAt,
-                });
+              if (isSettled) {
+                // Add to paid summary but don't include in owedToMe
+                reimbursements.summary.totalPaidToMe += roundedAmount;
               } else {
-                reimbursements.owedToMe.push({
-                  user: consumer,
-                  amount: roundedAmount,
-                  reimbursements: [
-                    {
-                      id: existingReimbursement.id,
-                      orderId: order.id,
-                      restaurant: order.Restaurant.name,
-                      orderDate: order.orderDate,
-                      amount: roundedAmount,
-                      status: existingReimbursement.status,
-                      createdAt: existingReimbursement.createdAt,
-                      updatedAt: existingReimbursement.updatedAt,
-                    },
-                  ],
-                });
+                // Only include unsettled reimbursements in the owed list
+                const existingCredit = reimbursements.owedToMe.find(
+                  (credit) => credit.user.id === consumerId,
+                );
+
+                if (existingCredit) {
+                  existingCredit.amount += roundedAmount;
+                  existingCredit.reimbursements.push({
+                    id: existingReimbursement.id,
+                    orderId: order.id,
+                    restaurant: order.Restaurant.name,
+                    orderDate: order.orderDate,
+                    amount: roundedAmount,
+                    status: existingReimbursement.status,
+                    createdAt: existingReimbursement.createdAt,
+                    updatedAt: existingReimbursement.updatedAt,
+                  });
+                } else {
+                  reimbursements.owedToMe.push({
+                    user: consumer,
+                    amount: roundedAmount,
+                    reimbursements: [
+                      {
+                        id: existingReimbursement.id,
+                        orderId: order.id,
+                        restaurant: order.Restaurant.name,
+                        orderDate: order.orderDate,
+                        amount: roundedAmount,
+                        status: existingReimbursement.status,
+                        createdAt: existingReimbursement.createdAt,
+                        updatedAt: existingReimbursement.updatedAt,
+                      },
+                    ],
+                  });
+                }
               }
             }
           }
@@ -314,7 +341,7 @@ app.get("/", async (c) => {
       }
     }
 
-    // Calculate summary totals
+    // Calculate summary totals (only for unsettled reimbursements)
     reimbursements.summary.totalOwedToMe = reimbursements.owedToMe.reduce(
       (sum, item) => sum + item.amount,
       0,
@@ -336,6 +363,10 @@ app.get("/", async (c) => {
       Math.round(reimbursements.summary.totalOwedByMe * 100) / 100;
     reimbursements.summary.netBalance =
       Math.round(reimbursements.summary.netBalance * 100) / 100;
+    reimbursements.summary.totalPaidToMe =
+      Math.round(reimbursements.summary.totalPaidToMe * 100) / 100;
+    reimbursements.summary.totalPaidByMe =
+      Math.round(reimbursements.summary.totalPaidByMe * 100) / 100;
 
     // Round individual amounts
     reimbursements.owedToMe.forEach((item) => {
@@ -350,6 +381,16 @@ app.get("/", async (c) => {
       success: true,
       data: reimbursements,
       totalGroupOrders: groupOrders.length,
+      stats: {
+        totalReimbursements:
+          reimbursements.owedToMe.length + reimbursements.owedByMe.length,
+        totalPaidReimbursements:
+          Math.round(
+            (reimbursements.summary.totalPaidToMe +
+              reimbursements.summary.totalPaidByMe) *
+              100,
+          ) / 100,
+      },
     });
   } catch (err) {
     console.error("Error calculating reimbursements:", err);
