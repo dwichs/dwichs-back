@@ -9,6 +9,22 @@ const app = new Hono<{ Variables: AuthType }>({
   strict: false,
 });
 
+// Define types for the reimbursement items
+interface ReimbursementItem {
+  user: any;
+  amount: number;
+  reimbursements: {
+    id: number;
+    orderId: number;
+    restaurant: string;
+    orderDate: Date;
+    amount: number;
+    status: string;
+    createdAt: Date;
+    updatedAt: Date;
+  }[];
+}
+
 app.get("/", async (c) => {
   try {
     const user = c.get("user");
@@ -94,19 +110,19 @@ app.get("/", async (c) => {
 
     // Calculate and create/update reimbursements
     const reimbursements = {
-      owedToMe: [], // Who owes money to the current user
-      owedByMe: [], // Who the current user owes money to
+      owedToMe: [] as ReimbursementItem[],
+      owedByMe: [] as ReimbursementItem[],
       summary: {
         totalOwedToMe: 0,
         totalOwedByMe: 0,
-        netBalance: 0, // Positive means others owe you, negative means you owe others
-        totalPaidToMe: 0, // Total amount that has been paid to me
-        totalPaidByMe: 0, // Total amount I have paid
+        netBalance: 0,
+        totalPaidToMe: 0,
+        totalPaidByMe: 0,
       },
     };
 
     // Helper function to check if a reimbursement status indicates it's settled
-    const isReimbursementSettled = (status) => {
+    const isReimbursementSettled = (status: string) => {
       return ["paid", "completed", "settled"].includes(status.toLowerCase());
     };
 
@@ -123,12 +139,14 @@ app.get("/", async (c) => {
       if (validPayments.length === 0) continue;
 
       // Calculate what each user ordered (their share of the bill)
-      const userShares = {};
+      const userShares: Record<string, { amount: number; user: any }> = {};
       let totalOrderAmount = 0;
 
       order.OrderItem.forEach((item) => {
         const itemUserId = item.userId;
-        const itemPrice = parseFloat(item.priceAtOrder);
+        if (!itemUserId) return; // Skip items without userId
+
+        const itemPrice = Number(item.priceAtOrder);
         totalOrderAmount += itemPrice;
 
         if (!userShares[itemUserId]) {
@@ -141,10 +159,10 @@ app.get("/", async (c) => {
       });
 
       // Find who paid for this order
-      const payers = {};
+      const payers: Record<string, { amount: number; user: any }> = {};
       validPayments.forEach((payment) => {
         const payerId = payment.userId;
-        const paymentAmount = parseFloat(payment.amount);
+        const paymentAmount = Number(payment.amount);
 
         if (!payers[payerId]) {
           payers[payerId] = {
@@ -157,12 +175,12 @@ app.get("/", async (c) => {
 
       // Calculate reimbursements for this order
       for (const consumerId of Object.keys(userShares)) {
-        const consumerShare = userShares[consumerId].amount;
-        const consumer = userShares[consumerId].user;
+        const consumerShare = userShares[consumerId]?.amount || 0;
+        const consumer = userShares[consumerId]?.user;
 
         for (const payerId of Object.keys(payers)) {
-          const payerTotalPaid = payers[payerId].amount;
-          const payer = payers[payerId].user;
+          const payerTotalPaid = payers[payerId]?.amount || 0;
+          const payer = payers[payerId]?.user;
 
           // Calculate how much this consumer owes this payer
           // Formula: (consumer's share / total order amount) * amount paid by payer
@@ -189,7 +207,7 @@ app.get("/", async (c) => {
               existingReimbursement = await prisma.reimbursement.create({
                 data: {
                   amount: roundedAmount,
-                  status: "pending",
+                  status: "unpaid",
                   description: `Reimbursement for order at ${order.Restaurant.name}`,
                   debtorId: consumerId,
                   creditorId: payerId,
@@ -213,9 +231,8 @@ app.get("/", async (c) => {
                 },
               });
             } else if (
-              Math.abs(
-                parseFloat(existingReimbursement.amount) - roundedAmount,
-              ) > 0.01 &&
+              Math.abs(Number(existingReimbursement.amount) - roundedAmount) >
+                0.01 &&
               !isReimbursementSettled(existingReimbursement.status)
             ) {
               // Update existing reimbursement if amount changed significantly and it's not settled
@@ -343,12 +360,12 @@ app.get("/", async (c) => {
 
     // Calculate summary totals (only for unsettled reimbursements)
     reimbursements.summary.totalOwedToMe = reimbursements.owedToMe.reduce(
-      (sum, item) => sum + item.amount,
+      (sum: number, item: ReimbursementItem) => sum + item.amount,
       0,
     );
 
     reimbursements.summary.totalOwedByMe = reimbursements.owedByMe.reduce(
-      (sum, item) => sum + item.amount,
+      (sum: number, item: ReimbursementItem) => sum + item.amount,
       0,
     );
 
@@ -369,11 +386,11 @@ app.get("/", async (c) => {
       Math.round(reimbursements.summary.totalPaidByMe * 100) / 100;
 
     // Round individual amounts
-    reimbursements.owedToMe.forEach((item) => {
+    reimbursements.owedToMe.forEach((item: ReimbursementItem) => {
       item.amount = Math.round(item.amount * 100) / 100;
     });
 
-    reimbursements.owedByMe.forEach((item) => {
+    reimbursements.owedByMe.forEach((item: ReimbursementItem) => {
       item.amount = Math.round(item.amount * 100) / 100;
     });
 
@@ -392,7 +409,7 @@ app.get("/", async (c) => {
           ) / 100,
       },
     });
-  } catch (err) {
+  } catch (err: unknown) {
     console.error("Error calculating reimbursements:", err);
     return c.json({ error: "Internal Server Error" }, 500);
   }
@@ -587,16 +604,18 @@ app.patch("/:id/mark-paid", async (c) => {
         },
       },
     });
-  } catch (err) {
+  } catch (err: unknown) {
     console.error("Error marking reimbursement as paid:", err);
 
     // Handle specific Prisma errors
-    if (err.code === "P2025") {
-      return c.json({ error: "Reimbursement not found" }, 404);
-    }
+    if (err && typeof err === "object" && "code" in err) {
+      if (err.code === "P2025") {
+        return c.json({ error: "Reimbursement not found" }, 404);
+      }
 
-    if (err.code === "P2002") {
-      return c.json({ error: "Database constraint violation" }, 400);
+      if (err.code === "P2002") {
+        return c.json({ error: "Database constraint violation" }, 400);
+      }
     }
 
     return c.json({ error: "Internal Server Error" }, 500);
@@ -671,7 +690,7 @@ app.get("/reimbursements/:id", async (c) => {
       success: true,
       data: reimbursement,
     });
-  } catch (err) {
+  } catch (err: unknown) {
     console.error("Error fetching reimbursement:", err);
     return c.json({ error: "Internal Server Error" }, 500);
   }
@@ -732,7 +751,7 @@ app.patch("/reimbursements/:id/dispute", async (c) => {
         description: updatedReimbursement.description,
       },
     });
-  } catch (err) {
+  } catch (err: unknown) {
     console.error("Error disputing reimbursement:", err);
     return c.json({ error: "Internal Server Error" }, 500);
   }

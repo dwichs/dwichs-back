@@ -22,7 +22,6 @@ app.get("/", async (c) => {
 
   const normalizedUser = {
     ...user,
-
     image: user.image ?? null,
   };
 
@@ -130,7 +129,15 @@ app.post("/", async (c) => {
         include: {
           items: {
             include: {
-              MenuItem: true,
+              MenuItem: {
+                include: {
+                  Restaurant: {
+                    select: {
+                      name: true,
+                    },
+                  },
+                },
+              },
               User: true,
             },
           },
@@ -142,7 +149,15 @@ app.post("/", async (c) => {
         include: {
           items: {
             include: {
-              MenuItem: true,
+              MenuItem: {
+                include: {
+                  Restaurant: {
+                    select: {
+                      name: true,
+                    },
+                  },
+                },
+              },
               User: true,
             },
           },
@@ -156,7 +171,7 @@ app.post("/", async (c) => {
 
     // Calculate total price
     const totalPrice = cart.items.reduce((sum, item) => {
-      return sum + parseFloat(item.MenuItem.price);
+      return sum + Number(item.MenuItem.price);
     }, 0);
 
     // Get restaurant ID from first item (assuming all items from same restaurant)
@@ -174,7 +189,7 @@ app.post("/", async (c) => {
       });
 
       // Create order participants
-      let uniqueUserIds;
+      let uniqueUserIds: string[];
       if (groupId) {
         // For group orders, add all users who have items in cart
         uniqueUserIds = [...new Set(cart.items.map((item) => item.userId))];
@@ -199,7 +214,7 @@ app.post("/", async (c) => {
       await tx.orderItem.createMany({
         data: cart.items.map((item) => ({
           orderId: newOrder.id,
-          priceAtOrder: item.MenuItem.price,
+          priceAtOrder: Number(item.MenuItem.price),
           nameAtOrder: item.MenuItem.name,
           imageUrlAtOrder: item.MenuItem.imageUrl,
           descriptionAtOrder: item.MenuItem.description,
@@ -222,15 +237,15 @@ app.post("/", async (c) => {
       });
 
       // Create reimbursements for group orders
-      let reimbursements = [];
+      let reimbursements: any[] = [];
       if (groupId && uniqueUserIds.length > 1) {
         // Calculate what each user owes
-        const userShares = {};
+        const userShares: Record<string, number> = {};
 
         // Calculate each user's share of the bill
         cart.items.forEach((item) => {
           const itemUserId = item.userId;
-          const itemPrice = parseFloat(item.MenuItem.price);
+          const itemPrice = Number(item.MenuItem.price);
 
           if (!userShares[itemUserId]) {
             userShares[itemUserId] = 0;
@@ -258,7 +273,7 @@ app.post("/", async (c) => {
             }
             return null;
           })
-          .filter(Boolean); // Remove null values
+          .filter(Boolean) as Promise<any>[];
 
         reimbursements = await Promise.all(reimbursementPromises);
       }
@@ -276,7 +291,7 @@ app.post("/", async (c) => {
       };
     });
 
-    const response = {
+    const response: any = {
       success: true,
       orderId: result.order.id,
       paymentId: result.payment.id,
@@ -289,13 +304,13 @@ app.post("/", async (c) => {
       response.reimbursements = {
         created: result.reimbursements.length,
         totalOwed: result.reimbursements.reduce(
-          (sum, r) => sum + parseFloat(r.amount),
+          (sum: number, r: any) => sum + Number(r.amount),
           0,
         ),
-        details: result.reimbursements.map((r) => ({
+        details: result.reimbursements.map((r: any) => ({
           id: r.id,
           debtorId: r.debtorId,
-          amount: parseFloat(r.amount),
+          amount: Number(r.amount),
           status: r.status,
         })),
       };
