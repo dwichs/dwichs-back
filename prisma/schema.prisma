@@ -98,7 +98,6 @@ model Order {
   Reimbursement     Reimbursement[]
 }
 
-
 model OrderParticipants {
   orderId Int
   userId  String
@@ -144,18 +143,18 @@ model Payment {
 }
 
 model PaymentMethod {
-  id            Int       @id @default(autoincrement())
+  id            Int             @id @default(autoincrement())
   type          String
   accountNumber String
   expiryDate    DateTime
-  isDefault     Boolean   @default(false)
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @default(now()) @updatedAt
+  isDefault     Boolean         @default(false)
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @default(now()) @updatedAt
   userId        String
   Order         Order[]
   Payment       Payment[]
   Reimbursement Reimbursement[]
-  User          User      @relation(fields: [userId], references: [id])
+  User          User            @relation(fields: [userId], references: [id])
 }
 
 model Reimbursement {
@@ -211,27 +210,27 @@ model UserRole {
 }
 
 model User {
-  id                String              @id
-  name              String
-  email             String
-  emailVerified     Boolean
-  image             String?
-  createdAt         DateTime
-  updatedAt         DateTime
-  sessions          Session[]
-  accounts          Account[]
-  Cart              Cart[]
-  CartItem          CartItem[]
-  Group             Group[]
-  GroupMembership   GroupMembership[]
-  orderParticipants OrderParticipants[]
-  OrderItem         OrderItem[]
-  Payment           Payment[]
-  PaymentMethod     PaymentMethod[]
-  UserRole          UserRole[]
-  Restaurant        Restaurant[]
-  reimbursementsOwed     Reimbursement[] @relation("ReimbursementDebtor")
-  reimbursementsPending  Reimbursement[] @relation("ReimbursementCreditor")
+  id                    String              @id
+  name                  String
+  email                 String
+  emailVerified         Boolean
+  image                 String?
+  createdAt             DateTime
+  updatedAt             DateTime
+  sessions              Session[]
+  accounts              Account[]
+  Cart                  Cart[]
+  CartItem              CartItem[]
+  Group                 Group[]
+  GroupMembership       GroupMembership[]
+  orderParticipants     OrderParticipants[]
+  OrderItem             OrderItem[]
+  Payment               Payment[]
+  PaymentMethod         PaymentMethod[]
+  UserRole              UserRole[]
+  Restaurant            Restaurant[]
+  reimbursementsOwed    Reimbursement[]     @relation("ReimbursementDebtor")
+  reimbursementsPending Reimbursement[]     @relation("ReimbursementCreditor")
 
   @@unique([email])
   @@map("user")
