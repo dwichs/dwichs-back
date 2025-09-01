@@ -95,7 +95,9 @@ model Order {
   orderParticipants OrderParticipants[]
   OrderItem         OrderItem[]
   Payment           Payment[]
+  Reimbursement     Reimbursement[]
 }
+
 
 model OrderParticipants {
   orderId Int
@@ -152,7 +154,29 @@ model PaymentMethod {
   userId        String
   Order         Order[]
   Payment       Payment[]
+  Reimbursement Reimbursement[]
   User          User      @relation(fields: [userId], references: [id])
+}
+
+model Reimbursement {
+  id                   Int            @id @default(autoincrement())
+  amount               Decimal
+  status               String
+  description          String?
+  createdAt            DateTime       @default(now())
+  updatedAt            DateTime       @default(now()) @updatedAt
+  settledAt            DateTime?
+  debtorId             String
+  debtor               User           @relation("ReimbursementDebtor", fields: [debtorId], references: [id])
+  creditorId           String
+  creditor             User           @relation("ReimbursementCreditor", fields: [creditorId], references: [id])
+  orderId              Int
+  order                Order          @relation(fields: [orderId], references: [id])
+  paymentMethodId      Int?
+  paymentMethod        PaymentMethod? @relation(fields: [paymentMethodId], references: [id])
+  transactionReference String?
+
+  @@unique([debtorId, creditorId, orderId])
 }
 
 model Restaurant {
@@ -206,6 +230,8 @@ model User {
   PaymentMethod     PaymentMethod[]
   UserRole          UserRole[]
   Restaurant        Restaurant[]
+  reimbursementsOwed     Reimbursement[] @relation("ReimbursementDebtor")
+  reimbursementsPending  Reimbursement[] @relation("ReimbursementCreditor")
 
   @@unique([email])
   @@map("user")
