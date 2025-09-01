@@ -257,4 +257,146 @@ app.get("/", async (c) => {
   }
 });
 
+app.post("/mark-paid", async (c) => {
+  try {
+    const body = await c.req.json();
+    const { reimbursementId, userId, amount, paidAt } = body;
+
+    // Basic validation
+    if (!reimbursementId || !userId || !amount || !paidAt) {
+      return c.json(
+        {
+          success: false,
+          error: "Missing required fields",
+        },
+        400,
+      );
+    }
+
+    // Parse reimbursementId to integer
+    const parsedReimbursementId = parseInt(reimbursementId);
+
+    if (isNaN(parsedReimbursementId)) {
+      return c.json(
+        {
+          success: false,
+          error: "Invalid reimbursement ID",
+        },
+        400,
+      );
+    }
+
+    // Start a transaction to ensure data consistency
+    const result = await prisma.$transaction(async (tx) => {
+      // First, verify the reimbursement exists and belongs to the current user
+      const reimbursement = await tx.reimbursement.findUnique({
+        where: {
+          id: parsedReimbursementId,
+        },
+        include: {
+          debtor: true,
+          creditor: true,
+          order: {
+            include: {
+              restaurant: true,
+              OrderItem: true,
+            },
+          },
+        },
+      });
+
+      if (!reimbursement) {
+        throw new Error("Reimbursement not found");
+      }
+
+      // Verify the amount matches (security check)
+      if (parseFloat(reimbursement.amount.toString()) !== amount) {
+        throw new Error("Amount mismatch");
+      }
+
+      // Check if already paid
+      if (reimbursement.status === "paid") {
+        throw new Error("Reimbursement already marked as paid");
+      }
+
+      // Update the reimbursement status
+      const updatedReimbursement = await tx.reimbursement.update({
+        where: { id: parsedReimbursementId },
+        data: {
+          status: "paid",
+          settledAt: new Date(paidAt),
+          updatedAt: new Date(),
+        },
+      });
+
+      // Create a payment record for audit trail
+      const paymentRecord = await tx.payment.create({
+        data: {
+          orderId: reimbursement.orderId,
+          userId: reimbursement.debtorId,
+          amount: reimbursement.amount,
+          status: "completed",
+          paymentDate: new Date(paidAt),
+          transactionReference: `reimb_${parsedReimbursementId}_${Date.now()}`,
+        },
+      });
+
+      return {
+        reimbursement: updatedReimbursement,
+        payment: paymentRecord,
+      };
+    });
+
+    return c.json(
+      {
+        success: true,
+        message: "Reimbursement marked as paid successfully",
+        data: {
+          reimbursementId: result.reimbursement.id,
+          status: result.reimbursement.status,
+          settledAt: result.reimbursement.settledAt,
+          paymentId: result.payment.id,
+        },
+      },
+      200,
+    );
+  } catch (error) {
+    console.error("Error marking reimbursement as paid:", error);
+
+    // Handle specific error types
+    if (error instanceof Error) {
+      if (error.message === "Reimbursement not found") {
+        return c.json(
+          {
+            success: false,
+            error: "Reimbursement not found",
+          },
+          404,
+        );
+      }
+
+      if (
+        error.message === "Amount mismatch" ||
+        error.message === "Reimbursement already marked as paid"
+      ) {
+        return c.json(
+          {
+            success: false,
+            error: error.message,
+          },
+          400,
+        );
+      }
+    }
+
+    return c.json(
+      {
+        success: false,
+        error: "Internal server error",
+      },
+      500,
+    );
+  }
+});
+
 export default app;
