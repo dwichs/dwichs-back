@@ -163,7 +163,7 @@ app.post("/", async (c) => {
     const restaurantId = cart.items[0].MenuItem.restaurantId;
 
     // Create order in a transaction
-    const order = await prisma.$transaction(async (tx) => {
+    const result = await prisma.$transaction(async (tx) => {
       // Create the order
       const newOrder = await tx.order.create({
         data: {
@@ -174,11 +174,10 @@ app.post("/", async (c) => {
       });
 
       // Create order participants
+      let uniqueUserIds;
       if (groupId) {
         // For group orders, add all users who have items in cart
-        const uniqueUserIds = [
-          ...new Set(cart.items.map((item) => item.userId)),
-        ];
+        uniqueUserIds = [...new Set(cart.items.map((item) => item.userId))];
         await tx.orderParticipants.createMany({
           data: uniqueUserIds.map((uid) => ({
             orderId: newOrder.id,
@@ -187,6 +186,7 @@ app.post("/", async (c) => {
         });
       } else {
         // For individual orders, just add the current user
+        uniqueUserIds = [userId];
         await tx.orderParticipants.create({
           data: {
             orderId: newOrder.id,
@@ -213,29 +213,95 @@ app.post("/", async (c) => {
       const payment = await tx.payment.create({
         data: {
           amount: totalPrice,
-          status: "paid", // Initial status - could be "pending", "processing", etc.
+          status: "paid", // Payment status
           orderId: newOrder.id,
           userId: userId, // The user placing the order is the payer
-          paymentMethodId: null, // Set to null initially, can be updated later
-          transactionReference: null, // Will be set when actual payment is processed
+          paymentMethodId: null,
+          transactionReference: null,
         },
       });
+
+      // Create reimbursements for group orders
+      let reimbursements = [];
+      if (groupId && uniqueUserIds.length > 1) {
+        // Calculate what each user owes
+        const userShares = {};
+
+        // Calculate each user's share of the bill
+        cart.items.forEach((item) => {
+          const itemUserId = item.userId;
+          const itemPrice = parseFloat(item.MenuItem.price);
+
+          if (!userShares[itemUserId]) {
+            userShares[itemUserId] = 0;
+          }
+          userShares[itemUserId] += itemPrice;
+        });
+
+        // Create reimbursement records for users who didn't pay
+        const reimbursementPromises = uniqueUserIds
+          .filter((participantId) => participantId !== userId) // Exclude the payer
+          .map((debtorId) => {
+            const amountOwed = userShares[debtorId] || 0;
+
+            if (amountOwed > 0) {
+              return tx.reimbursement.create({
+                data: {
+                  amount: amountOwed,
+                  status: "unpaid",
+                  description: `Reimbursement for order from ${cart.items[0]?.MenuItem?.Restaurant?.name || "restaurant"}`,
+                  debtorId: debtorId,
+                  creditorId: userId, // The person who paid
+                  orderId: newOrder.id,
+                },
+              });
+            }
+            return null;
+          })
+          .filter(Boolean); // Remove null values
+
+        reimbursements = await Promise.all(reimbursementPromises);
+      }
 
       // Clear the cart after successful order
       await tx.cartItem.deleteMany({
         where: { cartId: cart.id },
       });
 
-      return { order: newOrder, payment };
+      return {
+        order: newOrder,
+        payment,
+        reimbursements,
+        isGroupOrder: groupId && uniqueUserIds.length > 1,
+      };
     });
 
-    return c.json({
+    const response = {
       success: true,
-      orderId: order.order.id,
-      paymentId: order.payment.id,
+      orderId: result.order.id,
+      paymentId: result.payment.id,
       totalAmount: totalPrice,
       message: "Order placed successfully",
-    });
+    };
+
+    // Add reimbursement info for group orders
+    if (result.isGroupOrder) {
+      response.reimbursements = {
+        created: result.reimbursements.length,
+        totalOwed: result.reimbursements.reduce(
+          (sum, r) => sum + parseFloat(r.amount),
+          0,
+        ),
+        details: result.reimbursements.map((r) => ({
+          id: r.id,
+          debtorId: r.debtorId,
+          amount: parseFloat(r.amount),
+          status: r.status,
+        })),
+      };
+    }
+
+    return c.json(response);
   } catch (err) {
     console.error("Error creating order:", err);
     return c.json({ error: "Internal Server Error" }, 500);
