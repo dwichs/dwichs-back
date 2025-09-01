@@ -141,15 +141,13 @@ app.post("/", async (c) => {
     if (!userId) {
       return c.json({ error: "Unauthorized" }, 401);
     }
-
     const { menuItemId } = await c.req.json();
     const groupId = c.req.query("groupId");
-
     if (!menuItemId) {
       return c.json({ error: "menuItemId is required" }, 400);
     }
 
-    // Find the appropriate cart
+    // Find or create the appropriate cart
     let cart;
     if (groupId) {
       // Check if user is in the group
@@ -161,29 +159,36 @@ app.post("/", async (c) => {
           },
         },
       });
-
       if (!membership) {
         return c.json({ error: "Not a member of this group" }, 403);
       }
-
       cart = await prisma.cart.findUnique({
         where: { groupId: parseInt(groupId) },
       });
+
+      if (!cart) {
+        return c.json({ error: "Group cart not found" }, 404);
+      }
     } else {
+      // Find or create user cart
       cart = await prisma.cart.findUnique({
         where: { userId: userId },
       });
-    }
 
-    if (!cart) {
-      return c.json({ error: "Cart not found" }, 404);
+      // Create cart if it doesn't exist for the user
+      if (!cart) {
+        cart = await prisma.cart.create({
+          data: {
+            userId: userId,
+          },
+        });
+      }
     }
 
     // Verify menu item exists
     const menuItem = await prisma.menuItem.findUnique({
       where: { id: parseInt(menuItemId) },
     });
-
     if (!menuItem) {
       return c.json({ error: "Menu item not found" }, 404);
     }
