@@ -6,6 +6,7 @@ import restaurants from "./routes/restaurants.js";
 import orders from "./routes/orders.js";
 import cart from "./routes/cart.js";
 import groups from "./routes/groups.js";
+import reimbursements from "./routes/reimbursements.js";
 
 import { PrismaClient } from "../generated/prisma/client.js";
 const prisma = new PrismaClient();
@@ -45,6 +46,7 @@ app.route("/restaurants", restaurants);
 app.route("/orders", orders);
 app.route("/carts", cart);
 app.route("/groups", groups);
+app.route("/reimbursements", reimbursements);
 
 app.use("*", async (c, next) => {
   const session = await auth.api.getSession({ headers: c.req.raw.headers });
