@@ -1,6 +1,17 @@
 build-dev:
 	docker build -f Dockerfile.api --tag dwichs-api-dev .
 
+prod-build:
+	docker build -f Dockerfile.production.api --tag dwichs-api .
+	docker build -f Dockerfile.production.reverse-proxy --tag dwichs-reverse-proxy .
+prod-rm:
+	docker service rm dwichs_api
+	docker service rm dwichs_reverse-proxy
+prod-deploy:
+	docker stack deploy -c docker-compose.production.yml dwichs
+prod-ls:
+	docker ps
+
 reset: 
 	docker run --rm -it \
 		--name dwichs-api-temp \
