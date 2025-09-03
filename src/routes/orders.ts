@@ -186,7 +186,7 @@ app.post("/", async (c) => {
       const newOrder = await tx.order.create({
         data: {
           totalPrice: totalPrice,
-          statusId: 1, // Assuming 1 is "pending" status
+          statusId: 1,
           restaurantId: restaurantId,
         },
       });
@@ -231,9 +231,9 @@ app.post("/", async (c) => {
       const payment = await tx.payment.create({
         data: {
           amount: totalPrice,
-          status: "paid", // Payment status
+          status: "paid",
           orderId: newOrder.id,
-          userId: userId, // The user placing the order is the payer
+          userId: userId,
           paymentMethodId: null,
           transactionReference: null,
         },
@@ -269,7 +269,7 @@ app.post("/", async (c) => {
                   status: "unpaid",
                   description: `Reimbursement for order from ${cart.items[0]?.MenuItem?.Restaurant?.name || "restaurant"}`,
                   debtorId: debtorId,
-                  creditorId: userId, // The person who paid
+                  creditorId: userId,
                   orderId: newOrder.id,
                 },
               });

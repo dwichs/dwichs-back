@@ -42,8 +42,8 @@ app.get("/:id/orders", async (c) => {
     const orders = await prisma.order.findMany({
       where: { restaurantId: id },
       include: {
-        OrderItem: true, // include all items for each order
-        OrderStatus: true, // optional, include status info
+        OrderItem: true,
+        OrderStatus: true,
       },
       orderBy: {
         orderDate: "desc",

@@ -3,8 +3,6 @@ import { PrismaClient } from "../../generated/prisma/client.js";
 const prisma = new PrismaClient();
 import type { AuthType } from "../lib/auth.js";
 
-import { addMenuItemToCart, getCartItems } from "../lib/misc.js";
-
 const app = new Hono<{ Variables: AuthType }>({
   strict: false,
 });

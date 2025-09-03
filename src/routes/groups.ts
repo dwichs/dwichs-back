@@ -185,7 +185,7 @@ app.post("/join", async (c) => {
       data: {
         groupId: parsedGroupId,
         userId: userId,
-        roleInGroup: "member", // Default role for new members
+        roleInGroup: "member",
       },
       include: {
         Group: {
