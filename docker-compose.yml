@@ -14,7 +14,7 @@ services:
     networks:
       - dwichs
     volumes:
-      - dwichs-database:/var/lib/postgresql/data
+      - dwichs-database:/var/lib/postgresql
 
   dwichs-api:
     build:

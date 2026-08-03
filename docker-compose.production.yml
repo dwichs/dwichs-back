@@ -1,24 +1,26 @@
 services:
-  reverse-proxy:
-    image: dwichs-reverse-proxy:latest
-    hostname: dwichs-reverse-proxy
-    cap_add:
-      - NET_ADMIN
-    ports:
-      - "80:80"
-      - "443:443"
-      - "443:443/udp" # http/3
-    volumes:
-      - /docker/container/caddy/data:/data # TLS certificates and other important assets
-      - /docker/container/caddy/config:/config # Caddy may store certain configuration to disk
-    networks:
-      - dwichs
+  # reverse-proxy:
+  #   image: dwichs-reverse-proxy:latest
+  #   hostname: dwichs-reverse-proxy
+  #   cap_add:
+  #     - NET_ADMIN
+  #   ports:
+  #     - "80:80"
+  #     - "443:443"
+  #     - "443:443/udp" # http/3
+  #   volumes:
+  #     - /docker/container/caddy/data:/data # TLS certificates and other important assets
+  #     - /docker/container/caddy/config:/config # Caddy may store certain configuration to disk
+  #   networks:
+  #     - dwichs
 
   api:
     image: dwichs-api:latest
     hostname: dwichs-api
     stdin_open: true
     tty: true # Keeps the container running for debugging
+    ports:
+      - "3000:3000"
     depends_on:
       - database
     env_file:
@@ -35,7 +37,7 @@ services:
       POSTGRES_DB: dwichs
       POSTGRES_HOST_AUTH_METHOD: scram-sha-256
     volumes:
-      - /docker/container/database/data:/var/lib/postgresql/data
+      - /docker/container/database/postgresql:/var/lib/postgresql/
     networks:
       - dwichs
     healthcheck:
@@ -44,18 +46,37 @@ services:
       timeout: 2s
       retries: 20
 
-  dwichs-prisma-studio:
-      image: node:22
-      container_name: dwichs-prisma-studio
-      ports:
-        - 5555:5555
-      restart: unless-stopped
-      working_dir: /app
-      command: npx prisma studio --schema=/app/prisma/schema.prisma
-      networks:
-        - dwichs
-      volumes:
-        - ./:/app # Ensures your project files including prisma/ are available
+  # dwichs-prisma-studio:
+  #     image: node:22
+  #     container_name: dwichs-prisma-studio
+  #     ports:
+  #       - 5555:5555
+  #     restart: unless-stopped
+  #     working_dir: /app/prisma
+  #     command: npx prisma studio --url="postgresql://admin:admin@dwichs-database:5432/dwichs" --browser none
+  #     networks:
+  #       - dwichs
+  #     volumes:
+  #       - ./:/app # Ensures your project files including prisma/ are available
+
+  prisma-studio: 
+    hostname: dwichs-prisma-studio
+    image: node:lts-alpine3.17
+    working_dir: /usr/src/app
+    volumes: 
+      - ./prisma/:/usr/src/app
+    command: npx prisma studio --port 5555 --browser none
+    ports: 
+      - "5555:5555"
+    env_file: 
+      - .env.prod
+    networks: 
+      - dwichs
+    # depends_on: 
+    #   postgres_db: 
+    #     condition: service_healthy // [!code ++]
+    #   server: 
+    #     condition: service_started // [!code ++]
 
 networks:
   dwichs:
