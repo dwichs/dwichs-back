@@ -36,3 +36,24 @@ seed:
 		dwichs-api-dev \
 		npx prisma db seed
 
+prod-seed: 
+	docker run --rm -it \
+		--name dwichs-api-temp \
+		--hostname dwichs-api-temp \
+		-p 3001:3000 \
+		--network dwichs \
+		--workdir /app \
+		-v ./prisma:/app/prisma \
+		-v ./.env:/app/.env \
+		dwichs-api \
+		npx prisma db seed
+
+psql:
+	docker exec -it $(docker ps --filter name=dwichs_database -q) psql -U admin -d dwichs
+
+logs-api:
+	docker service logs dwichs_api --raw --timestamps --follow
+
+logs-database:
+	docker service logs dwichs_database --raw --timestamps --follow
+
