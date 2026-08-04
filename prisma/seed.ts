@@ -1,4 +1,5 @@
 import { PrismaClient } from "../generated/prisma/client.js";
+import { auth } from "../src/lib/auth.js";
 const prisma = new PrismaClient();
 
 async function main() {
@@ -16,28 +17,38 @@ async function main() {
     },
   });
 
-  // Create users first (restaurant owners)
-  const now = new Date();
+  // Create users first (restaurant owners) via the better auth api
+  const owner1 = (
+    await auth.api.signUpEmail({
+      body: {
+        name: "Restaurant Owner 1",
+        email: "owner1@example.com",
+        password: "password123",
+      },
+    })
+  ).user;
 
-  await prisma.user.create({
+  const owner2 = (
+    await auth.api.signUpEmail({
+      body: {
+        name: "Restaurant Owner 2",
+        email: "owner2@example.com",
+        password: "password123",
+      },
+    })
+  ).user;
+
+  await prisma.userRole.create({
     data: {
-      id: "owner1",
-      name: "Restaurant Owner 1",
-      email: "owner1@example.com",
-      emailVerified: true,
-      createdAt: now,
-      updatedAt: now,
+      userId: owner1.id,
+      roleId: role2.id,
     },
   });
 
-  await prisma.user.create({
+  await prisma.userRole.create({
     data: {
-      id: "owner2",
-      name: "Restaurant Owner 2",
-      email: "owner2@example.com",
-      emailVerified: true,
-      createdAt: now,
-      updatedAt: now,
+      userId: owner2.id,
+      roleId: role2.id,
     },
   });
 
@@ -117,7 +128,7 @@ async function main() {
 
   // Create restaurants with actual owners
   console.log("Creating restaurants...");
-  const restaurantOwners = ["owner1", "owner2", "owner1", "owner2", "owner1"]; // Alternating ownership
+  const restaurantOwners = [owner1.id, owner2.id, owner1.id, owner2.id, owner1.id]; // Alternating ownership
 
   for (let i = 0; i < restaurants.length; i++) {
     const restaurantData = restaurants[i];
