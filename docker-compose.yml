@@ -46,18 +46,18 @@ services:
           path: .env
           target: /app
 
-  dwichs-prisma-studio:
-    image: node:22
-    container_name: dwichs-prisma-studio
-    ports:
-      - 5555:5555
-    restart: unless-stopped
-    working_dir: /app
-    command: npx prisma studio --schema=/app/prisma/schema.prisma
-    networks:
-      - dwichs
-    volumes:
-      - ./:/app # Ensures your project files including prisma/ are available
+  # dwichs-prisma-studio:
+  #   image: node:22
+  #   container_name: dwichs-prisma-studio
+  #   ports:
+  #     - 5555:5555
+  #   restart: unless-stopped
+  #   working_dir: /app
+  #   command: npx prisma studio --schema=/app/prisma/schema.prisma
+  #   networks:
+  #     - dwichs
+  #   volumes:
+  #     - ./:/app # Ensures your project files including prisma/ are available
 
 volumes:
   dwichs-database:

@@ -59,24 +59,24 @@ services:
   #     volumes:
   #       - ./:/app # Ensures your project files including prisma/ are available
 
-  prisma-studio: 
-    hostname: dwichs-prisma-studio
-    image: node:lts-alpine3.17
-    working_dir: /usr/src/app
-    volumes: 
-      - ./prisma/:/usr/src/app
-    command: npx prisma studio --port 5555 --browser none
-    ports: 
-      - "5555:5555"
-    env_file: 
-      - .env.prod
-    networks: 
-      - dwichs
-    # depends_on: 
-    #   postgres_db: 
-    #     condition: service_healthy // [!code ++]
-    #   server: 
-    #     condition: service_started // [!code ++]
+  # prisma-studio: 
+  #   hostname: dwichs-prisma-studio
+  #   image: node:lts-alpine3.17
+  #   working_dir: /usr/src/app
+  #   volumes: 
+  #     - ./prisma/:/usr/src/app
+  #   command: npx prisma studio --port 5555 --browser none
+  #   ports: 
+  #     - "5555:5555"
+  #   env_file: 
+  #     - .env.prod
+  #   networks: 
+  #     - dwichs
+  #   # depends_on: 
+  #   #   postgres_db: 
+  #   #     condition: service_healthy // [!code ++]
+  #   #   server: 
+  #   #     condition: service_started // [!code ++]
 
 networks:
   dwichs:
