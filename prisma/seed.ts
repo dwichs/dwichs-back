@@ -50,7 +50,7 @@ async function main() {
     {
       name: "Le Switch",
       description: "Gourmet sandwiches with a French twist",
-      logoUrl: "https://example.com/leswitch.jpg",
+      logoUrl: "https://images.unsplash.com/photo-1553909489-cd47e0907980?w=800&q=80",
       address: {
         street: "123 Rue de la Sandwich",
         city: "Paris",
@@ -64,7 +64,7 @@ async function main() {
     {
       name: "Rezistanz",
       description: "Bold flavors and rebellious sandwiches",
-      logoUrl: "https://example.com/rezistanz.jpg",
+      logoUrl: "https://images.unsplash.com/photo-1481070414801-51fd732d7184?w=800&q=80",
       address: {
         street: "456 Revolution Street",
         city: "Berlin",
@@ -78,7 +78,7 @@ async function main() {
     {
       name: "Sandwich Central",
       description: "Your go-to spot for classic sandwiches",
-      logoUrl: "https://example.com/sandwichcentral.jpg",
+      logoUrl: "https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?w=800&q=80",
       address: {
         street: "789 Main Avenue",
         city: "New York",
@@ -92,7 +92,7 @@ async function main() {
     {
       name: "The Bread Box",
       description: "Artisanal sandwiches made with fresh bread daily",
-      logoUrl: "https://example.com/breadbox.jpg",
+      logoUrl: "https://images.unsplash.com/photo-1528735602780-2552fd46c7af?w=800&q=80",
       address: {
         street: "321 Baker Street",
         city: "London",
@@ -106,7 +106,7 @@ async function main() {
     {
       name: "Sub & More",
       description: "Submarine sandwiches and specialty subs",
-      logoUrl: "https://example.com/subandmore.jpg",
+      logoUrl: "https://images.unsplash.com/photo-1553163147-622ab57be1c7?w=800&q=80",
       address: {
         street: "654 Ocean Drive",
         city: "Miami",
