@@ -161,7 +161,7 @@ async function main() {
         ingredients: "Ham, Gruyère cheese, béchamel sauce, brioche bread",
         description: "Classic French grilled ham and cheese sandwich",
         price: 7.5,
-        imageUrl: "https://example.com/croque-monsieur.jpg",
+        imageUrl: "https://images.unsplash.com/photo-1600334129128-685c5582fd35?w=600&q=80",
         restaurantId: 1,
       },
       {
@@ -170,7 +170,7 @@ async function main() {
         ingredients: "Brie cheese, prosciutto, arugula, baguette, fig jam",
         description: "Elegant French sandwich with premium ingredients",
         price: 8.0,
-        imageUrl: "https://example.com/parisien.jpg",
+        imageUrl: "https://images.unsplash.com/photo-1528736235302-52922df5c122?w=600&q=80",
         restaurantId: 1,
       },
       {
@@ -179,7 +179,7 @@ async function main() {
         ingredients: "Roasted vegetables, goat cheese, pesto, ciabatta",
         description: "Fresh vegetarian sandwich with Mediterranean flavors",
         price: 6.5,
-        imageUrl: "https://example.com/vegetarien.jpg",
+        imageUrl: "https://images.unsplash.com/photo-1512621776951-a57141f2eefd?w=600&q=80",
         restaurantId: 1,
       },
       {
@@ -188,7 +188,7 @@ async function main() {
         ingredients: "Roasted chicken, camembert, lettuce, sourdough",
         description: "Tender roasted chicken with creamy French cheese",
         price: 7.75,
-        imageUrl: "https://example.com/poulet-roti.jpg",
+        imageUrl: "https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=600&q=80",
         restaurantId: 1,
       },
       {
@@ -197,7 +197,7 @@ async function main() {
         ingredients: "French ham, butter, cornichons, fresh baguette",
         description: "Simple yet perfect traditional French sandwich",
         price: 5.5,
-        imageUrl: "https://example.com/jambon-beurre.jpg",
+        imageUrl: "https://images.unsplash.com/photo-1455619452474-d2be8b1e70cd?w=600&q=80",
         restaurantId: 1,
       },
     ],
@@ -210,7 +210,7 @@ async function main() {
           "Spicy chorizo, pepper jack cheese, jalapeños, chipotle mayo, sourdough",
         description: "Fiery sandwich for those who dare to be different",
         price: 7.75,
-        imageUrl: "https://example.com/rebel.jpg",
+        imageUrl: "https://images.unsplash.com/photo-1560053608-13721e0d69e8?w=600&q=80",
         restaurantId: 2,
       },
       {
@@ -219,7 +219,7 @@ async function main() {
         ingredients: "Pulled pork, coleslaw, BBQ sauce, pickles, brioche bun",
         description: "A game-changing BBQ sandwich that breaks all rules",
         price: 8.0,
-        imageUrl: "https://example.com/revolution.jpg",
+        imageUrl: "https://images.unsplash.com/photo-1544025162-d76694265947?w=600&q=80",
         restaurantId: 2,
       },
       {
@@ -229,7 +229,7 @@ async function main() {
           "Fried chicken, hot sauce, blue cheese, celery, kaiser roll",
         description: "Buffalo chicken sandwich with an attitude",
         price: 7.25,
-        imageUrl: "https://example.com/uprising.jpg",
+        imageUrl: "https://images.unsplash.com/photo-1571091718767-18b5b1457add?w=600&q=80",
         restaurantId: 2,
       },
       {
@@ -239,7 +239,7 @@ async function main() {
           "Mixed meats, multiple cheeses, everything sauce, pretzel roll",
         description: "Chaotic combination that somehow works perfectly",
         price: 8.0,
-        imageUrl: "https://example.com/anarchy.jpg",
+        imageUrl: "https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=600&q=80",
         restaurantId: 2,
       },
       {
@@ -248,7 +248,7 @@ async function main() {
         ingredients: "Black bean patty, avocado, sprouts, hummus, whole wheat",
         description: "Secret weapon of the plant-based resistance",
         price: 6.75,
-        imageUrl: "https://example.com/underground.jpg",
+        imageUrl: "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=600&q=80",
         restaurantId: 2,
       },
     ],
@@ -260,7 +260,7 @@ async function main() {
         ingredients: "Turkey, bacon, lettuce, tomato, mayo, white bread",
         description: "Traditional club sandwich done right",
         price: 6.99,
-        imageUrl: "https://example.com/classic-club.jpg",
+        imageUrl: "https://images.unsplash.com/photo-1481070414801-51fd732d7184?w=600&q=80",
         restaurantId: 3,
       },
       {
@@ -270,7 +270,7 @@ async function main() {
           "Corned beef, sauerkraut, Swiss cheese, Russian dressing, rye",
         description: "Premium version of the deli classic",
         price: 7.99,
-        imageUrl: "https://example.com/reuben.jpg",
+        imageUrl: "https://images.unsplash.com/photo-1553163147-622ab57be1c7?w=600&q=80",
         restaurantId: 3,
       },
       {
@@ -280,7 +280,7 @@ async function main() {
           "Salami, pepperoni, provolone, lettuce, tomato, Italian dressing, sub roll",
         description: "Loaded Italian cold cut sandwich",
         price: 7.5,
-        imageUrl: "https://example.com/italian-hero.jpg",
+        imageUrl: "https://images.unsplash.com/photo-1606755456206-b25206cde27e?w=600&q=80",
         restaurantId: 3,
       },
       {
@@ -289,7 +289,7 @@ async function main() {
         ingredients: "Tuna salad, cheddar cheese, tomato, sourdough bread",
         description: "Comfort food classic grilled to perfection",
         price: 6.49,
-        imageUrl: "https://example.com/tuna-melt.jpg",
+        imageUrl: "https://images.unsplash.com/photo-1553909489-cd47e0907980?w=600&q=80",
         restaurantId: 3,
       },
       {
@@ -298,7 +298,7 @@ async function main() {
         ingredients: "Sliced steak, provolone, onions, peppers, hoagie roll",
         description: "Authentic Philadelphia-style cheesesteak",
         price: 8.0,
-        imageUrl: "https://example.com/philly.jpg",
+        imageUrl: "https://images.unsplash.com/photo-1550547660-d9450f859349?w=600&q=80",
         restaurantId: 3,
       },
     ],
@@ -311,7 +311,7 @@ async function main() {
           "Roasted turkey, brie, cranberry sauce, arugula, multigrain",
         description: "Gourmet turkey sandwich on house-made bread",
         price: 7.0,
-        imageUrl: "https://example.com/artisan-turkey.jpg",
+        imageUrl: "https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?w=600&q=80",
         restaurantId: 4,
       },
       {
@@ -321,7 +321,7 @@ async function main() {
           "Hummus, roasted red peppers, cucumber, feta, olives, pita",
         description: "Fresh and healthy Mediterranean flavors",
         price: 6.5,
-        imageUrl: "https://example.com/mediterranean.jpg",
+        imageUrl: "https://images.unsplash.com/photo-1541123356219-284ebe98ae3b?w=600&q=80",
         restaurantId: 4,
       },
       {
@@ -331,7 +331,7 @@ async function main() {
           "Smoked salmon, cream cheese, capers, red onion, everything bagel",
         description: "Luxurious breakfast sandwich any time of day",
         price: 8.0,
-        imageUrl: "https://example.com/salmon-bagel.jpg",
+        imageUrl: "https://images.unsplash.com/photo-1484723091739-30a097e8f929?w=600&q=80",
         restaurantId: 4,
       },
       {
@@ -341,7 +341,7 @@ async function main() {
           "Grilled portobello, goat cheese, roasted peppers, focaccia",
         description: "Hearty vegetarian option with bold flavors",
         price: 7.25,
-        imageUrl: "https://example.com/portobello.jpg",
+        imageUrl: "https://images.unsplash.com/photo-1490645935967-10de6ba17061?w=600&q=80",
         restaurantId: 4,
       },
       {
@@ -351,7 +351,7 @@ async function main() {
           "Scrambled eggs, bacon, cheese, hash browns, English muffin",
         description: "All-day breakfast sandwich that satisfies",
         price: 6.25,
-        imageUrl: "https://example.com/breakfast-stack.jpg",
+        imageUrl: "https://images.unsplash.com/photo-1555126634-323283e090fa?w=600&q=80",
         restaurantId: 4,
       },
     ],
@@ -364,7 +364,7 @@ async function main() {
           "Ham, salami, turkey, provolone, lettuce, tomato, oil & vinegar, sub roll",
         description: "Our signature loaded submarine sandwich",
         price: 7.75,
-        imageUrl: "https://example.com/submarine.jpg",
+        imageUrl: "https://images.unsplash.com/photo-1533089860892-a7c6f0a88666?w=600&q=80",
         restaurantId: 5,
       },
       {
@@ -374,7 +374,7 @@ async function main() {
           "House-made meatballs, marinara sauce, mozzarella, Italian herbs, sub roll",
         description: "Classic Italian-American comfort food",
         price: 7.49,
-        imageUrl: "https://example.com/meatball.jpg",
+        imageUrl: "https://images.unsplash.com/photo-1540189549336-e6e99c3679fe?w=600&q=80",
         restaurantId: 5,
       },
       {
@@ -384,7 +384,7 @@ async function main() {
           "Breaded chicken cutlet, marinara, mozzarella, parmesan, sub roll",
         description: "Crispy chicken parm sub that hits the spot",
         price: 8.0,
-        imageUrl: "https://example.com/chicken-parm.jpg",
+        imageUrl: "https://images.unsplash.com/photo-1506354666786-959d6d497f1a?w=600&q=80",
         restaurantId: 5,
       },
       {
@@ -394,7 +394,7 @@ async function main() {
           "Lettuce, tomato, cucumber, peppers, onions, cheese, Italian dressing, sub roll",
         description: "Fresh and loaded vegetarian submarine",
         price: 5.99,
-        imageUrl: "https://example.com/veggie-supreme.jpg",
+        imageUrl: "https://images.unsplash.com/photo-1505576399279-565b52d4ac71?w=600&q=80",
         restaurantId: 5,
       },
       {
@@ -403,7 +403,7 @@ async function main() {
         ingredients: "Roast beef, turkey, ham, swiss, lettuce, mayo, sub roll",
         description: "Triple meat sub for serious appetites",
         price: 8.0,
-        imageUrl: "https://example.com/captains-choice.jpg",
+        imageUrl: "https://images.unsplash.com/photo-1528735602780-2552fd46c7af?w=600&q=80",
         restaurantId: 5,
       },
     ],
