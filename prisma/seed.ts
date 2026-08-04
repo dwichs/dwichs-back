@@ -17,22 +17,22 @@ async function main() {
     },
   });
 
-  // Create users first (restaurant owners) via the better auth api
-  const owner1 = (
+  // Create a consumer and a restaurant owner via the better auth api
+  const consumer = (
     await auth.api.signUpEmail({
       body: {
-        name: "Restaurant Owner 1",
-        email: "owner1@example.com",
+        name: "Test Consumer",
+        email: "consumer@example.com",
         password: "password123",
       },
     })
   ).user;
 
-  const owner2 = (
+  const owner = (
     await auth.api.signUpEmail({
       body: {
-        name: "Restaurant Owner 2",
-        email: "owner2@example.com",
+        name: "Test Restaurant Owner",
+        email: "owner@example.com",
         password: "password123",
       },
     })
@@ -40,14 +40,7 @@ async function main() {
 
   await prisma.userRole.create({
     data: {
-      userId: owner1.id,
-      roleId: role2.id,
-    },
-  });
-
-  await prisma.userRole.create({
-    data: {
-      userId: owner2.id,
+      userId: owner.id,
       roleId: role2.id,
     },
   });
@@ -128,7 +121,7 @@ async function main() {
 
   // Create restaurants with actual owners
   console.log("Creating restaurants...");
-  const restaurantOwners = [owner1.id, owner2.id, owner1.id, owner2.id, owner1.id]; // Alternating ownership
+  const restaurantOwners = Array(restaurants.length).fill(owner.id); // All owned by the same owner
 
   for (let i = 0; i < restaurants.length; i++) {
     const restaurantData = restaurants[i];
