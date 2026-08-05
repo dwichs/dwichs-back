@@ -36,7 +36,7 @@ seed:
 		dwichs-api-dev \
 		npx prisma db seed
 
-prod-seed: 
+prod-seed:
 	docker run --rm -it \
 		--name dwichs-api-temp \
 		--hostname dwichs-api-temp \
@@ -44,9 +44,10 @@ prod-seed:
 		--network dwichs \
 		--workdir /app \
 		-v ./prisma:/app/prisma \
+		-v ./src:/app/src \
 		-v ./.env:/app/.env \
 		dwichs-api \
-		npx prisma db seed
+		sh -c "npx prisma migrate deploy && npx prisma db seed"
 
 psql:
 	docker exec -it $(docker ps --filter name=dwichs_database -q) psql -U admin -d dwichs
